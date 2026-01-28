@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Consultant's Trap</title>
+    <style>
+        :root {
+            --bg-color: #f0f0f0;
+            --game-bg: #2c3e50;
+            --text-color: #333;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --card-bg: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Retro terminal vibe */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        #game-container {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            background-color: var(--game-bg);
+            border: 4px solid #34495e;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 10;
+        }
+
+        #player {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            transition: left 0.1s;
+        }
+
+        .client-request {
+            position: absolute;
+            background-color: var(--card-bg);
+            padding: 10px;
+            border-radius: 4px;
+            border: 2px solid #bdc3c7;
+            text-align: center;
+            width: 120px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 0 #95a5a6;
+        }
+
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        .btn-ppt { background-color: #e67e22; color: white; }
+        .btn-xls { background-color: #27ae60; color: white; }
+        .btn-mail { background-color: #3498db; color: white; }
+
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            text-align: center;
+        }
+
+        #start-screen button, #game-over-screen button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: inherit;
+            border-radius: 4px;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Bibliography Section */
+        #bibliography {
+            margin-top: 50px;
+            max-width: 800px;
+            background: white;
+            padding: 40px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        #bibliography h2 {
+            font-size: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .citation {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            text-indent: -20px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 650px) {
+            #game-container { width: 100%; height: 350px; }
+            .btn { padding: 10px 15px; font-size: 12px; }
+            #controls { gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>The Consultant's Trap</h1>
+    <p class="subtitle">"It's just for two years," you say. But the requests keep coming.</p>
+
+    <div id="game-container">
+        <div id="ui-layer">
+            <div>PRESTIGE: <span id="score">0</span></div>
+            <div>BURNOUT: <span id="burnout">0%</span></div>
+        </div>
+
+        <div id="player">🧑‍💼</div>
+
+        <!-- Screens -->
+        <div id="start-screen">
+            <h2>Welcome to the Pipeline</h2>
+            <p style="padding: 0 20px;">Clients will demand deliverables.<br>Give them what they want before you burn out.</p>
+            <p><strong>INSTRUCTIONS:</strong></p>
+            <ul style="text-align: left; list-style: none;">
+                <li>"Fix Fonts" / "Make Pretty" ➔ <strong>DECK</strong> (Press 1)</li>
+                <li>"Run Numbers" / "Model" ➔ <strong>EXCEL</strong> (Press 2)</li>
+                <li>"Schedule" / "Update" ➔ <strong>EMAIL</strong> (Press 3)</li>
+            </ul>
+            <button onclick="startGame()">Accept Offer</button>
+        </div>
+
+        <div id="game-over-screen" class="hidden">
+            <h2>YOU BURNED OUT</h2>
+            <p>But hey, nice exit opportunities?</p>
+            <p>Final Prestige: <span id="final-score">0</span></p>
+            <button onclick="location.reload()">Re-apply (Try Again)</button>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button class="btn btn-ppt" onclick="handleInput('deck')">1. DECK 📊</button>
+        <button class="btn btn-xls" onclick="handleInput('excel')">2. EXCEL 📈</button>
+        <button class="btn btn-mail" onclick="handleInput('email')">3. EMAIL 📧</button>
+    </div>
+
+    <div id="bibliography">
+        <h2>Works Cited</h2>
+        <div class="citation">Empson, Laura. "If You're So Successful, Why Are You Still Working 70 Hours a Week?" <em>Harvard Business Review</em>, May-June 2017. hbr.org/2017/05/if-youre-so-successful-why-are-you-still-working-70-hours-a-week.</div>
+        <div class="citation">Graeber, David. <em>Bullshit Jobs: A Theory</em>. Simon & Schuster, 2018.</div>
+        <div class="citation">Housel, Morgan. <em>The Psychology of Money: Timeless Lessons on Wealth, Greed, and Happiness</em>. Harriman House, 2020.</div>
+        <div class="citation">"An Insecure Overachiever? Let's Break Free." <em>Ivy Exec</em>, ivyexec.com/career-advice/2021/3-signs-you-might-be-an-insecure-overachiever-and-how-to-break-free/.</div>
+        <div class="citation">Sims, Peter. "Elite Universities Are Breeding Grounds for Insecure Overachievers." <em>Forge, Medium</em>, 27 Nov. 2019, forge.medium.com/what-is-success-43f9402ca3f2.</div>
+        <div class="citation">"'The Bermuda Triangle of Talent': 27-year-old Oxford grad turned down McKinsey and Morgan Stanley to find out why Gen Z's smartest keep selling out." <em>Fortune</em>, 26 Oct. 2025, fortune.com/2025/10/26/gen-z-college-selling-out-elite-universities-2025-admissions-mckinsey-harvard-oxford/.</div>
+        <div class="citation">Van Teutem, Simon. <em>De bermudadriehoek van talent</em>. De Correspondent, 2024.</div>
+    </div>
+
+    <script>
+        // Game State
+        let isPlaying = false;
+        let score = 0;
+        let burnout = 0;
+        let gameSpeed = 2000; // ms between spawns
+        let gameLoop;
+        let spawnLoop;
+        const requests = [];
+
+        // Configurations
+        const TYPES = {
+            deck: { label: "DECK", color: "#e67e22", triggers: ["Fix Fonts", "Make Pretty", "One Slider", "PDF This"] },
+            excel: { label: "EXCEL", color: "#27ae60", triggers: ["Run Numbers", "The Model", "Q3 Projections", "Data Dump"] },
+            email: { label: "EMAIL", color: "#3498db", triggers: ["Schedule It", "Pls Fix", "Circle Back", "Update?"] }
+        };
+
+        const keys = Object.keys(TYPES);
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            isPlaying = true;
+            score = 0;
+            burnout = 0;
+            updateUI();
+            
+            // Start Loops
+            spawnRequest();
+            gameLoop = setInterval(updateGame, 50);
+        }
+
+        function spawnRequest() {
+            if (!isPlaying) return;
+
+            const typeKey = keys[Math.floor(Math.random() * keys.length)];
+            const typeData = TYPES[typeKey];
+            const text = typeData.triggers[Math.floor(Math.random() * typeData.triggers.length)];
+            
+            // Random horizontal position (keep within bounds)
+            const xPos = 20 + Math.random() * 500; // container is 600px wide
+
+            const req = document.createElement('div');
+            req.className = 'client-request';
+            req.innerText = text;
+            req.style.left = xPos + 'px';
+            req.style.top = '-50px'; // Start above visible area
+            req.dataset.type = typeKey;
+
+            document.getElementById('game-container').appendChild(req);
+            requests.push({ el: req, y: -50, speed: 1 + (score / 10) }); // Speed increases with score
+
+            // Schedule next spawn (gets faster)
+            const nextSpawn = Math.max(500, 2000 - (score * 50));
+            setTimeout(spawnRequest, nextSpawn);
+        }
+
+        function updateGame() {
+            if (!isPlaying) return;
+
+            // Move requests
+            for (let i = requests.length - 1; i >= 0; i--) {
+                const r = requests[i];
+                r.y += r.speed;
+                r.el.style.top = r.y + 'px';
+
+                // Hit bottom (Missed deadline)
+                if (r.y > 350) {
+                    failRequest(i);
+                }
+            }
+        }
+
+        function handleInput(inputType) {
+            if (!isPlaying) return;
+
+            // Find the lowest request that matches
+            // We look for the "most urgent" one (highest Y value)
+            let targetIndex = -1;
+            let maxY = -100;
+
+            for (let i = 0; i < requests.length; i++) {
+                if (requests[i].y > maxY) {
+                    maxY = requests[i].y;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex !== -1) {
+                const target = requests[targetIndex];
+                if (target.el.dataset.type === inputType) {
+                    // Success
+                    succeedRequest(targetIndex);
+                } else {
+                    // Wrong deliverable sent
+                    flashScreen('red');
+                    burnout += 10;
+                    checkGameOver();
+                }
+            }
+            updateUI();
+        }
+
+        function succeedRequest(index) {
+            const r = requests[index];
+            r.el.remove();
+            requests.splice(index, 1);
+            score++;
+            
+            // Move player visually to match where the request was
+            const player = document.getElementById('player');
+            player.style.left = r.el.style.left;
+
+            updateUI();
+        }
+
+        function failRequest(index) {
+            const r = requests[index];
+            r.el.style.backgroundColor = 'red';
+            setTimeout(() => r.el.remove(), 200);
+            requests.splice(index, 1);
+            
+            burnout += 20; // Big penalty for missing deadline
+            checkGameOver();
+            updateUI();
+        }
+
+        function checkGameOver() {
+            if (burnout >= 100) {
+                burnout = 100;
+                isPlaying = false;
+                clearInterval(gameLoop);
+                document.getElementById('final-score').innerText = score;
+                document.getElementById('game-over-screen').classList.remove('hidden');
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score').innerText = score;
+            document.getElementById('burnout').innerText = burnout + '%';
+            document.getElementById('burnout').style.color = burnout > 70 ? 'red' : 'white';
+        }
+
+        function flashScreen(color) {
+            const container = document.getElementById('game-container');
+            container.style.borderColor = color;
+            setTimeout(() => {
+                container.style.borderColor = '#34495e';
+            }, 100);
+        }
+
+        // Keyboard Controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1') handleInput('deck');
+            if (e.key === '2') handleInput('excel');
+            if (e.key === '3') handleInput('email');
+        });
+
+    </script>
+</body>
+</html>
