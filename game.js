@@ -108,6 +108,17 @@ const Game = {
                 lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`;
             });
 
+            // Add Skip Button dynamically if not exists
+            if(!document.getElementById('btn-skip')) {
+                const btn = document.createElement('button');
+                btn.id = 'btn-skip';
+                btn.className = 'btn';
+                btn.innerText = "SKIP TIMER ⏭️";
+                btn.style.marginTop = "20px";
+                btn.onclick = () => Game.skipMemory();
+                document.getElementById('memory-overlay').appendChild(btn);
+            }
+
             // Timer
             let t = 20;
             const el = document.getElementById('timer-big');
@@ -131,6 +142,13 @@ const Game = {
             this.splats = [];
             this.state.goal = 1 + this.state.level;
             this.spawnClient();
+        }
+    },
+
+    skipMemory: function() {
+        if(this.state.phase === 'MEMORIZE') {
+            clearInterval(this.tInt);
+            this.startPhase('PLAYING');
         }
     },
 
@@ -172,24 +190,33 @@ const Game = {
         }
 
         // 2. Clients
-        let rate = this.state.level === 1 ? 1800 : 1200;
+        let rate = Math.max(600, 1800 - (this.state.level * 200)); 
         if(this.state.frame % rate === 0 && this.clients.length < 3) this.spawnClient();
 
         this.clients.forEach((c, i) => {
             if(c.state === 'WAITING') {
-                c.patience -= (0.05 + (this.state.level * 0.02));
+                c.patience -= (0.05 + (this.state.level * 0.015));
                 if(c.patience <= 0) {
-                    c.state = 'ANGRY';
+                    // TRANSFORM TO CHAD
+                    c.state = 'CHAD';
+                    c.patience = 100;
                     this.state.sanity -= 10;
                     AUDIO.bruh();
                     this.particle(c.x, c.y, "🤬", "red");
-                    c.attackTimer = 60; // Wait 1s before first throw
+                    c.attackTimer = 60; 
+                    c.cooldown = 0;
                 }
-            } else if (c.state === 'ANGRY') {
-                c.attackTimer--;
-                if(c.attackTimer <= 0) {
-                    this.throwProjectile(c);
-                    c.attackTimer = 120; // Throw every 2s
+            } else if (c.state === 'CHAD') {
+                if(c.cooldown > 0) {
+                    c.cooldown--;
+                } else {
+                    c.attackTimer--;
+                    if(c.attackTimer <= 0) {
+                        this.throwProjectile(c);
+                        let attackSpeed = Math.max(30, 120 - (this.state.level * 10));
+                        c.attackTimer = attackSpeed;
+                        if(Math.random() < 0.3) c.cooldown = 180; // Rest
+                    }
                 }
             }
         });
@@ -199,7 +226,7 @@ const Game = {
             let p = this.projectiles[i];
             p.x += p.vx;
             p.y += p.vy;
-            p.rot += 0.2; // Spin!
+            p.rot += 0.2; 
 
             if(p.x < 0 || p.x > 960 || p.y < 0 || p.y > 640) {
                 this.projectiles.splice(i, 1); continue;
@@ -207,7 +234,7 @@ const Game = {
 
             if(Math.hypot(p.x - this.player.x, p.y - this.player.y) < 30) {
                 this.state.sanity -= 15;
-                this.player.stun = 45; // 0.75s stun
+                this.player.stun = 45; 
                 AUDIO.splat();
                 this.projectiles.splice(i, 1);
                 this.splats.push({x: this.player.x, y: this.player.y});
@@ -228,7 +255,7 @@ const Game = {
         this.clients.push({
             x: 150 + (this.clients.length * 250),
             y: this.deskY + 40, w: 40, h: 40,
-            task: t, patience: 100, state: 'WAITING', attackTimer: 0
+            task: t, patience: 100, state: 'WAITING', attackTimer: 0, cooldown: 0, frame: 0
         });
         AUDIO.vine();
     },
@@ -237,7 +264,7 @@ const Game = {
         const dx = this.player.x - client.x;
         const dy = this.player.y - client.y;
         const dist = Math.hypot(dx, dy);
-        const speed = 9; // Fast!
+        const speed = 7 + (this.state.level * 0.5);
         
         this.projectiles.push({
             x: client.x, y: client.y,
@@ -248,7 +275,7 @@ const Game = {
 
     interact: function() {
         const p = this.player;
-        if(p.stun > 0) return; // Can't act if stunned
+        if(p.stun > 0) return; 
 
         // Cubicles
         for(let c of this.map) {
@@ -271,7 +298,7 @@ const Game = {
         // Clients
         for(let i=0; i<this.clients.length; i++) {
             let c = this.clients[i];
-            if(c.state !== 'WAITING') continue; // Can't serve angry clients
+            if(c.state !== 'WAITING') continue; 
 
             if(Math.hypot(p.x - c.x, p.y - (c.y - 60)) < 90) {
                 if(p.holding && p.holding.id === c.task.id) {
@@ -296,7 +323,6 @@ const Game = {
 
     gameOver: function() {
         this.state.phase = 'GAMEOVER';
-        // Save High Score
         if(this.state.level > this.state.highScore) {
             this.state.highScore = this.state.level;
             localStorage.setItem('consulting_chaos_score', this.state.level);
@@ -304,7 +330,7 @@ const Game = {
         document.getElementById('game-over-screen').classList.remove('hidden');
         AUDIO.leave();
     },
-
+    
     particle: function(x, y, txt, col) { this.particles.push({x,y,txt,col,life:60}); },
 
     // --- DRAWING ---
@@ -331,41 +357,47 @@ const Game = {
         });
 
         // Environment
-        this.rect(20, 320, 40, 40, "#e17055"); this.circle(40, 310, 25, "#00b894"); // Plant L
-        this.rect(900, 320, 40, 40, "#e17055"); this.circle(920, 310, 25, "#00b894"); // Plant R
+        this.rect(20, 320, 40, 40, "#e17055"); this.circle(40, 310, 25, "#00b894"); 
+        this.rect(900, 320, 40, 40, "#e17055"); this.circle(920, 310, 25, "#00b894"); 
 
-        // Cubicles
         this.map.forEach(c => this.drawCubicle(c));
-
-        // Desk
         this.rect(0, this.deskY, 960, 20, "#57606f");
-
-        // Trash
         ctx.font = "80px Arial"; ctx.fillText("🗑️", this.trashBin.x - 20, this.trashBin.y + 40);
 
-        // Clients
         this.clients.forEach(c => this.drawClient(c));
-
-        // Projectiles
         this.projectiles.forEach(p => {
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.rot);
-            this.circle(0, 0, 12, "white");
-            ctx.fillStyle = "#6F4E37"; ctx.fillRect(-6, -6, 12, 12);
+            ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+            this.circle(0, 0, 12, "white"); ctx.fillStyle = "#6F4E37"; ctx.fillRect(-6, -6, 12, 12);
             ctx.restore();
         });
 
-        // Player
         this.drawPlayer(this.player);
 
-        // Particles
         this.particles.forEach((p,i) => {
             ctx.fillStyle = p.col; ctx.font = "40px Arial"; ctx.fillText(p.txt, p.x, p.y);
             p.y--; p.life--; if(p.life<=0) this.particles.splice(i,1);
         });
-    },
 
+        // --- LOW SANITY WARNING (POLICE LIGHTS) ---
+        if(this.state.sanity <= 30 && this.state.phase === 'PLAYING') {
+            const opacity = 0.3 + Math.sin(this.state.frame * 0.2) * 0.1;
+            const color = Math.floor(this.state.frame / 10) % 2 === 0 ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 0, 255, 0.3)";
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 960, 640);
+            
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.font = "bold 30px Courier New";
+            ctx.textAlign = "center";
+            ctx.fillText("⚠️ WARNING: YOU PISSED OFF THE CHAD ⚠️", 480, 100);
+            ctx.strokeText("⚠️ WARNING: YOU PISSED OFF THE CHAD ⚠️", 480, 100);
+            ctx.font = "bold 20px Courier New";
+            ctx.fillText("COMPLETE TASKS BEFORE YOU GET FIRED", 480, 130);
+        }
+    },
+    
     drawCubicle: function(c) {
         const ctx = this.ctx;
         ctx.fillStyle = c.task.color; ctx.fillRect(c.x, c.y, c.w, c.h);
@@ -392,17 +424,27 @@ const Game = {
         }
     },
 
+    drawLegs: function(x, y, col, frame, moving) {
+        const ctx = this.ctx;
+        ctx.strokeStyle = "black"; ctx.lineWidth = 4;
+        let off = moving ? Math.sin(frame) * 8 : 0;
+        ctx.beginPath(); ctx.moveTo(x-10, y+25); ctx.lineTo(x-10, y+45+off); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+10, y+25); ctx.lineTo(x+10, y+45-off); ctx.stroke();
+    },
+
     drawPlayer: function(p) {
         const ctx = this.ctx;
         const bob = Math.sin(p.frame) * 4;
+        const moving = (this.keys['w'] || this.keys['a'] || this.keys['s'] || this.keys['d']);
+        
+        ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.ellipse(p.x, p.y + 45, 20, 8, 0, 0, Math.PI*2); ctx.fill();
+        this.drawLegs(p.x, p.y+bob, "#0984e3", p.frame, moving);
         
         if(p.stun > 0) {
-             // Stun visuals
-             ctx.font = "30px Arial"; ctx.fillText("💫", p.x-10, p.y-20);
-             if(Math.floor(this.state.frame/4)%2===0) return; // Blink
+             ctx.font = "30px Arial"; ctx.fillText("💫", p.x-10, p.y-40);
+             if(Math.floor(this.state.frame/4)%2===0) return; 
         }
 
-        ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.ellipse(p.x, p.y + 35, 20, 8, 0, 0, Math.PI*2); ctx.fill();
         this.circle(p.x, p.y + 25 + bob, 18, "#0984e3");
         this.circle(p.x, p.y + bob, 22, "#ffeaa7");
         ctx.fillStyle="black";
@@ -422,12 +464,15 @@ const Game = {
         const ctx = this.ctx;
         const bob = Math.sin(this.state.frame * 0.1) * 3;
         
-        let col = c.state === 'ANGRY' ? "#e17055" : "#ff7675";
+        let col = c.state === 'CHAD' ? "#e17055" : "#ff7675";
+        let head = c.state === 'CHAD' ? "#ffcccc" : "#ffeaa7";
+
+        this.drawLegs(c.x, c.y+bob, col, this.state.frame, false);
         this.circle(c.x, c.y + 25 + bob, 18, col);
-        this.circle(c.x, c.y + bob, 22, "#ffeaa7");
+        this.circle(c.x, c.y + bob, 22, head);
         
         ctx.fillStyle="black";
-        if(c.state === 'ANGRY') {
+        if(c.state === 'CHAD') {
              ctx.lineWidth=2; 
              ctx.beginPath(); ctx.moveTo(c.x-12, c.y-5+bob); ctx.lineTo(c.x-2, c.y+bob); ctx.stroke();
              ctx.beginPath(); ctx.moveTo(c.x+12, c.y-5+bob); ctx.lineTo(c.x+2, c.y+bob); ctx.stroke();
@@ -436,16 +481,18 @@ const Game = {
              ctx.beginPath(); ctx.arc(c.x+8, c.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
         }
 
-        if(c.state === 'ANGRY' && c.attackTimer < 30) {
-            ctx.font = "40px Arial"; ctx.fillText("❗️", c.x, c.y - 40 + bob);
+        if(c.state === 'CHAD') {
+            if(c.cooldown > 0) {
+                ctx.fillStyle = "gray"; ctx.font="20px Arial"; ctx.fillText("💤", c.x, c.y - 50 + bob);
+            } else {
+                ctx.font = "40px Arial"; ctx.fillText("🤬", c.x, c.y - 50 + bob);
+            }
         } else {
             ctx.beginPath(); ctx.moveTo(c.x, c.y - 30 + bob); ctx.lineTo(c.x + 30, c.y - 60 + bob); ctx.stroke();
             this.circle(c.x + 40, c.y - 65 + bob, 30, "white");
             ctx.fillStyle = "black"; ctx.font = "35px Arial"; ctx.textAlign="center";
-            ctx.fillText(c.state==='ANGRY' ? "🤬" : c.task.icon, c.x + 40, c.y - 52 + bob);
-        }
+            ctx.fillText(c.task.icon, c.x + 40, c.y - 52 + bob);
 
-        if(c.state === 'WAITING') {
             this.rect(c.x - 25, c.y + 55, 50, 10, "white");
             ctx.fillStyle = c.patience < 30 ? "red" : "#00b894";
             ctx.fillRect(c.x - 23, c.y + 57, 46 * (c.patience/100), 6);
