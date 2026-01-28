@@ -19,28 +19,38 @@ const TASKS = [
 ];
 
 const AUDIO = {
-    ctx: new (window.AudioContext || window.webkitAudioContext)(),
-    speak: function(txt, rate=1, pitch=1) {
+    sounds: {
+        bruh: new Audio('sounds/bruh.mp3'),
+        vine: new Audio('sounds/vine-boom.mp3'),
+        yippee: new Audio('sounds/yippee.mp3'),
+        bonk: new Audio('sounds/bonk.mp3'),
+        metal: new Audio('sounds/metal-pipe.mp3')
+    },
+    
+    play: function(key) {
+        if(this.sounds[key]) {
+            this.sounds[key].currentTime = 0;
+            this.sounds[key].play().catch(e => console.log("Audio play failed:", e));
+        }
+    },
+
+    // TTS Fallback for specific lines
+    speak: function(txt) {
         if(!window.speechSynthesis) return;
         window.speechSynthesis.cancel();
         const ut = new SpeechSynthesisUtterance(txt);
-        ut.rate = rate; ut.pitch = pitch;
+        ut.rate = 0.9;
         window.speechSynthesis.speak(ut);
     },
-    playTone: function(freq, type, dur) {
-        if(this.ctx.state === 'suspended') this.ctx.resume();
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = type; o.frequency.value = freq;
-        g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+dur);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(); o.stop(this.ctx.currentTime+dur);
+
+    bruh: function() { this.play('bruh'); },
+    leave: function() { 
+        this.play('metal'); // Metal pipe for chaos
+        setTimeout(() => this.speak("You need to leave."), 1000); 
     },
-    bruh: function() { this.speak("Bruh", 0.5, 0.5); },
-    leave: function() { this.speak("You need to leave", 0.8, 1); },
-    vine: function() { this.playTone(60, 'sawtooth', 0.6); },
-    splat: function() { this.playTone(150, 'triangle', 0.2); }
+    vine: function() { this.play('vine'); },
+    splat: function() { this.play('bonk'); },
+    success: function() { this.play('yippee'); }
 };
 
 // --- GAME ENGINE ---
@@ -306,6 +316,7 @@ const Game = {
                     this.state.score++;
                     this.state.sanity = Math.min(100, this.state.sanity + 15);
                     p.holding = null;
+                    AUDIO.success();
                     this.particle(c.x, c.y-100, "✅", "green");
                     if(this.state.score >= this.state.goal) {
                         this.state.phase = 'LEVEL_DONE';
