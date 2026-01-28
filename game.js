@@ -24,32 +24,48 @@ const AUDIO = {
         vine: new Audio('sounds/vine-boom.mp3'),
         yippee: new Audio('sounds/yippee.mp3'),
         bonk: new Audio('sounds/bonk.mp3'),
-        leave: new Audio('sounds/leave.mp3')
+        leave: new Audio('sounds/leave.mp3'),
+        bgm: new Audio('sounds/bgm.mp3'),
+        paper: new Audio('sounds/paper.mp3'),
+        slurp: new Audio('sounds/slurp.mp3'),
+        keyboard: new Audio('sounds/keyboard.mp3'),
+        cash: new Audio('sounds/cash.mp3')
     },
     
     play: function(key) {
         if(this.sounds[key]) {
-            this.sounds[key].volume = 0.4; // Lower volume
+            this.sounds[key].volume = 0.4; 
             this.sounds[key].currentTime = 0;
-            this.sounds[key].play().catch(e => console.log("Audio play failed:", e));
+            this.sounds[key].play().catch(e => {});
         }
     },
 
-    // TTS Fallback
+    playBGM: function() {
+        this.sounds.bgm.loop = true;
+        this.sounds.bgm.volume = 0.2; // Background volume
+        this.sounds.bgm.play().catch(e => {});
+    },
+
     speak: function(txt) {
         if(!window.speechSynthesis) return;
         window.speechSynthesis.cancel();
         const ut = new SpeechSynthesisUtterance(txt);
-        ut.rate = 0.9;
-        ut.volume = 0.4;
+        ut.rate = 0.9; ut.volume = 0.4;
         window.speechSynthesis.speak(ut);
     },
 
     bruh: function() { this.play('bruh'); },
-    leave: function() { this.play('leave'); },
+    leave: function() { this.play('leave'); this.sounds.bgm.pause(); },
     vine: function() { this.play('vine'); },
     splat: function() { this.play('bonk'); },
-    success: function() { this.play('yippee'); }
+    success: function() { this.play('yippee'); },
+    
+    pickup: function(type) {
+        if(type === 'coffee') this.play('slurp');
+        else if(type === 'tech') this.play('keyboard');
+        else if(type === 'model') this.play('cash');
+        else this.play('paper'); // decks, legal, hr
+    }
 };
 
 // --- GAME ENGINE ---
@@ -128,6 +144,7 @@ const Game = {
         }
 
         if(phase === 'PLAYING') {
+            AUDIO.playBGM();
             document.getElementById('memory-overlay').classList.add('hidden');
             document.getElementById('level-screen').classList.add('hidden');
             this.state.phase = 'PLAYING';
@@ -280,6 +297,7 @@ const Game = {
             if(p.x > c.x && p.x < c.x + c.w && p.y > c.y && p.y < c.y + c.h) {
                 p.holding = c.task;
                 this.particle(p.x, p.y-50, c.task.icon, "black");
+                AUDIO.pickup(c.task.id);
                 return;
             }
         }
