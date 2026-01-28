@@ -29,7 +29,9 @@ const AUDIO = {
         paper: new Audio('sounds/paper.mp3'),
         slurp: new Audio('sounds/slurp.mp3'),
         keyboard: new Audio('sounds/keyboard.mp3'),
-        cash: new Audio('sounds/cash.mp3')
+        cash: new Audio('sounds/cash.mp3'),
+        rooster: new Audio('sounds/rooster.mp3'),
+        trombone: new Audio('sounds/trombone.mp3')
     },
     
     play: function(key) {
@@ -42,7 +44,7 @@ const AUDIO = {
 
     playBGM: function() {
         this.sounds.bgm.loop = true;
-        this.sounds.bgm.volume = 0.2; // Background volume
+        this.sounds.bgm.volume = 0.2; 
         this.sounds.bgm.play().catch(e => {});
     },
 
@@ -55,16 +57,21 @@ const AUDIO = {
     },
 
     bruh: function() { this.play('bruh'); },
-    leave: function() { this.play('leave'); this.sounds.bgm.pause(); },
+    leave: function() { 
+        this.sounds.bgm.pause();
+        this.play('trombone'); // Sad trombone
+        setTimeout(() => this.play('leave'), 1000); 
+    },
     vine: function() { this.play('vine'); },
     splat: function() { this.play('bonk'); },
     success: function() { this.play('yippee'); },
+    rooster: function() { this.play('rooster'); },
     
     pickup: function(type) {
         if(type === 'coffee') this.play('slurp');
         else if(type === 'tech') this.play('keyboard');
         else if(type === 'model') this.play('cash');
-        else this.play('paper'); // decks, legal, hr
+        else this.play('paper'); 
     }
 };
 
@@ -169,6 +176,7 @@ const Game = {
     },
 
     nextLevel: function() {
+        AUDIO.rooster();
         this.state.level++;
         this.startPhase('PLAYING'); 
     },
