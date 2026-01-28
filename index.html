@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Analyst: Meme Edition</title>
+    <title>The Analyst: Office Edition</title>
     <style>
         :root {
-            --bg-color: #74b9ff;
-            --floor-color: #dfe6e9;
-            --wall-color: #b2bec3;
+            --bg-color: #636e72; /* Dark outer background */
+            --floor-color: #f5f6fa; /* Bright office floor */
+            --carpet-color: #dcdde1;
         }
         
         body {
-            font-family: 'Verdana', sans-serif;
-            background-color: #2d3436;
+            font-family: 'Courier New', sans-serif;
+            background-color: var(--bg-color);
             margin: 0;
             padding: 0;
             display: flex;
@@ -26,8 +26,8 @@
 
         #game-container {
             position: relative;
-            box-shadow: 0 0 0 10px #000;
-            border-radius: 20px;
+            box-shadow: 0 0 0 10px #2d3436;
+            border-radius: 4px;
             overflow: hidden;
             background: var(--floor-color);
             width: 900px;
@@ -49,13 +49,13 @@
 
         .hud-pill {
             background: white;
-            border: 4px solid black;
-            padding: 10px 25px;
-            border-radius: 50px;
-            font-weight: 900;
-            font-size: 24px;
-            box-shadow: 6px 6px 0 rgba(0,0,0,0.3);
-            text-transform: uppercase;
+            border: 3px solid black;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.8);
+            color: black;
         }
 
         /* Screens */
@@ -71,49 +71,46 @@
 
         .modal {
             background: white;
-            border: 6px solid black;
-            border-radius: 25px;
-            padding: 50px;
+            border: 4px solid black;
+            padding: 40px;
             text-align: center;
-            box-shadow: 20px 20px 0 rgba(0,0,0,0.4);
+            box-shadow: 10px 10px 0 rgba(0,0,0,1);
             max-width: 600px;
         }
 
         .hidden { display: none !important; }
 
-        h1 { margin: 0 0 15px 0; font-size: 48px; -webkit-text-stroke: 2px black; color: #ffeb3b; text-shadow: 4px 4px 0 #000; }
-        p { font-size: 20px; font-weight: bold; margin: 10px 0; }
+        h1 { margin: 0 0 10px 0; font-size: 40px; text-transform: uppercase; letter-spacing: -2px; }
+        p { font-size: 18px; margin: 10px 0; }
         
         .btn {
-            background: #00cec9;
-            border: 4px solid black;
-            padding: 20px 50px;
-            font-size: 28px;
-            font-weight: 900;
+            background: #ffeaa7;
+            border: 3px solid black;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
             cursor: pointer;
-            border-radius: 15px;
-            margin-top: 30px;
-            box-shadow: 8px 8px 0 black;
-            transition: transform 0.1s;
+            margin-top: 20px;
+            box-shadow: 5px 5px 0 black;
+            transition: 0.1s;
         }
-        .btn:active { transform: translate(5px, 5px); box-shadow: none; }
-        .btn:hover { background: #81ecec; }
+        .btn:active { transform: translate(4px, 4px); box-shadow: none; }
+        .btn:hover { background: #fdcb6e; }
 
-        /* Timer & Legend */
-        #timer-big { font-size: 100px; font-weight: 900; -webkit-text-stroke: 4px black; color: white; margin: 20px 0; text-shadow: 8px 8px 0 black;}
+        /* Timer */
+        #timer-big { font-size: 120px; font-weight: 900; color: #2d3436; margin: 20px 0; }
         
         .legend-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
-            background: white;
+            background: #eee;
             padding: 20px;
-            border: 4px solid black;
-            border-radius: 15px;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
+            border: 2px solid black;
+            margin-top: 20px;
         }
-        .legend-item { display: flex; align-items: center; font-size: 20px; font-weight: bold; }
-        .color-dot { width: 30px; height: 30px; border-radius: 50%; border: 3px solid black; margin-right: 15px; }
+        .legend-item { display: flex; align-items: center; font-size: 16px; font-weight: bold; }
+        .color-dot { width: 20px; height: 20px; border: 2px solid black; margin-right: 10px; }
 
     </style>
 </head>
@@ -123,102 +120,106 @@
         <canvas id="gameCanvas" width="900" height="650"></canvas>
 
         <div id="ui-layer">
-            <div class="hud-pill" style="color:#0984e3">Q<span id="level-display">1</span></div>
-            <div class="hud-pill" style="color:#6c5ce7">Goal: <span id="served-display">0</span>/<span id="goal-display">2</span></div>
-            <div class="hud-pill" style="color:#d63031">❤️ <span id="lives-display">100%</span></div>
+            <div class="hud-pill">WEEK <span id="level-display">1</span></div>
+            <div class="hud-pill">TASKS: <span id="served-display">0</span>/<span id="goal-display">2</span></div>
+            <div class="hud-pill">SANITY: <span id="lives-display">100%</span></div>
         </div>
 
         <div id="screens">
             <!-- Start Screen -->
             <div id="start-screen" class="modal">
-                <h1>THE ANALYST</h1>
-                <p>Survive the corporate ladder.</p>
-                <div style="background:#dfe6e9; padding:20px; border:3px solid black; border-radius:10px; margin:20px 0; text-align:left;">
-                    <p>🧠 <strong>MEMORIZE</strong> the cabinet locations.</p>
-                    <p>🏃 <strong>RUN</strong> to fetch the files.</p>
-                    <p>🐢 <strong>Q1 IS SLOW.</strong> Take your time.</p>
-                    <p>🔊 <strong>SOUND ON</strong> for meme fx.</p>
+                <h1>The Office</h1>
+                <p>Welcome to the cubicle farm.</p>
+                <div style="background:#f1f2f6; padding:15px; border:2px solid black; margin:20px 0; text-align:left;">
+                    <p>1. <strong>MEMORIZE</strong> which color cubicle has which task.</p>
+                    <p>2. The <strong>ICONS</strong> will disappear. The <strong>COLORS</strong> stay.</p>
+                    <p>3. Clients appear every <strong>30 seconds</strong> (at first).</p>
+                    <p>4. Don't make me say "Bruh".</p>
                 </div>
-                <button class="btn" onclick="startMemoryPhase()">HIRE ME</button>
+                <button class="btn" onclick="startMemoryPhase()">CLOCK IN</button>
             </div>
 
             <!-- Memory Phase -->
-            <div id="memory-screen" class="modal hidden" style="background: rgba(0,0,0,0.9); width:100%; height:100%; max-width:none; border:none; border-radius:0;">
-                <h1 style="color:white">MEMORIZE!</h1>
+            <div id="memory-screen" class="modal hidden" style="width:100%; height:100%; max-width:none; background:rgba(255,255,255,0.95);">
+                <h1>STUDY THE LAYOUT</h1>
                 <div id="timer-big">20</div>
+                <p>Remember what happens in each cubicle!</p>
                 <div id="legend-display" class="legend-grid"></div>
             </div>
 
             <!-- Level Complete -->
             <div id="level-screen" class="modal hidden">
-                <h1 style="color: #55efc4;">PROMOTED!</h1>
-                <p>Performance: <span style="color:#00b894">EXCELLENT</span></p>
-                <p>Prepare for the next quarter.</p>
-                <button class="btn" onclick="nextLevel()">NEXT Q</button>
+                <h1 style="color: #00b894;">WEEK SURVIVED</h1>
+                <p>"You didn't get fired. Good job."</p>
+                <button class="btn" onclick="nextLevel()">START NEXT WEEK</button>
             </div>
 
             <!-- Game Over -->
             <div id="game-over-screen" class="modal hidden">
-                <h1 style="color: #ff7675;">FIRED</h1>
-                <p>Pack your desk.</p>
+                <h1 style="color: #d63031;">TERMINATED</h1>
+                <p>"You need to leave."</p>
                 <button class="btn" onclick="location.reload()">RE-APPLY</button>
             </div>
         </div>
     </div>
 
 <script>
-    // --- AUDIO SYSTEM (MEME SYNTH) ---
+    // --- AUDIO SYSTEM (TTS + SYNTH) ---
     const Audio = {
         ctx: new (window.AudioContext || window.webkitAudioContext)(),
-        playTone: function(freq, type, duration, vol=0.1) {
+        
+        speak: function(text, rate=1.0, pitch=1.0) {
+            if (!window.speechSynthesis) return;
+            // Cancel any current speech to avoid overlap pileup
+            window.speechSynthesis.cancel();
+            
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.rate = rate;
+            utter.pitch = pitch;
+            window.speechSynthesis.speak(utter);
+        },
+
+        playTone: function(freq, type, duration) {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = type;
             osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start();
             osc.stop(this.ctx.currentTime + duration);
         },
+
         vineBoom: function() {
-            // Low thud
-            this.playTone(60, 'sawtooth', 0.5, 0.3);
-            this.playTone(40, 'sine', 0.8, 0.5);
+            this.playTone(60, 'sawtooth', 0.6);
+            this.playTone(40, 'sine', 0.9);
         },
+
+        bruh: function() {
+            this.speak("Bruh", 0.6, 0.5); // Slow and low pitch
+        },
+
+        leave: function() {
+            this.speak("You need to leave", 0.9, 1.0);
+        },
+
         yippee: function() {
-            // High happy noise
-            this.playTone(800, 'sine', 0.1, 0.1);
-            setTimeout(() => this.playTone(1200, 'sine', 0.2, 0.1), 100);
-        },
-        wompWomp: function() {
-            this.playTone(150, 'triangle', 0.3, 0.2);
-            setTimeout(() => this.playTone(100, 'triangle', 0.6, 0.2), 300);
-        },
-        yeet: function() {
-            // Slide whistle effect
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.frequency.setValueAtTime(400, this.ctx.currentTime);
-            osc.frequency.linearRampToValueAtTime(1000, this.ctx.currentTime + 0.3);
-            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.3);
+            this.playTone(600, 'sine', 0.1);
+            setTimeout(() => this.playTone(900, 'sine', 0.2), 100);
+            // this.speak("Yippee", 1.5, 1.5); // Optional: Use TTS for yippee too?
         }
     };
 
     // --- CONSTANTS ---
     const TASKS = [
-        { id: 'deck', name: 'Deck', icon: '📊', color: '#ff7675' },
-        { id: 'model', name: 'Model', icon: '📉', color: '#55efc4' },
-        { id: 'legal', name: 'Legal', icon: '📜', color: '#ffeaa7' },
-        { id: 'coffee', name: 'Coffee', icon: '☕', color: '#fab1a0' },
-        { id: 'tech', name: 'IT', icon: '💻', color: '#74b9ff' },
-        { id: 'lunch', name: 'Lunch', icon: '🍔', color: '#a29bfe' }
+        { id: 'deck', name: 'Decks', icon: '📊', color: '#ff7675' },  // Red
+        { id: 'model', name: 'Models', icon: '📉', color: '#55efc4' }, // Green
+        { id: 'legal', name: 'Legal', icon: '📜', color: '#ffeaa7' },  // Yellow
+        { id: 'coffee', name: 'Coffee', icon: '☕', color: '#74b9ff' }, // Blue
+        { id: 'tech', name: 'IT', icon: '💻', color: '#a29bfe' },      // Purple
+        { id: 'hr', name: 'HR', icon: '🤝', color: '#fab1a0' }         // Orange
     ];
 
     const canvas = document.getElementById('gameCanvas');
@@ -235,13 +236,13 @@
         frame: 0
     };
 
-    let player = { x: 450, y: 350, w: 40, h: 50, holding: null, frame: 0, faceDir: 1 };
+    let player = { x: 450, y: 350, w: 30, h: 30, holding: null, frame: 0, faceDir: 1 };
     let clients = [];
     let particles = [];
     
-    // Environment
-    const deskY = 500;
-    const trashBin = { x: 820, y: 480, w: 50, h: 60 };
+    // Layout
+    const deskY = 520;
+    const trashBin = { x: 820, y: 500, w: 40, h: 50 };
 
     // Inputs
     const keys = { w: false, a: false, s: false, d: false, space: false };
@@ -253,9 +254,7 @@
         if(e.key === 'a' || e.key === 'ArrowLeft') keys.a = true;
         if(e.key === 's' || e.key === 'ArrowDown') keys.s = true;
         if(e.key === 'd' || e.key === 'ArrowRight') keys.d = true;
-        
-        // Resume Audio Context on interaction
-        if (Audio.ctx.state === 'suspended') Audio.ctx.resume();
+        if(Audio.ctx.state === 'suspended') Audio.ctx.resume();
     });
     window.addEventListener('keyup', e => {
         if(e.code === 'Space') { keys.space = false; spaceLocked = false; }
@@ -272,20 +271,21 @@
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('memory-screen').classList.remove('hidden');
 
-        // Generate Map (Randomized)
+        // Generate Map (Cubicles)
         let shuffled = [...TASKS].sort(() => Math.random() - 0.5);
         state.map = [];
         
-        // Row 1 (Top)
-        for(let i=0; i<3; i++) state.map.push({ x: 120 + (i * 250), y: 100, w: 100, h: 120, task: shuffled[i] });
-        // Row 2 (Middle)
-        for(let i=0; i<3; i++) state.map.push({ x: 120 + (i * 250), y: 300, w: 100, h: 120, task: shuffled[i+3] });
+        // 2x3 Grid of Cubicles
+        // Row 1
+        for(let i=0; i<3; i++) state.map.push({ x: 100 + (i * 260), y: 80, w: 180, h: 140, task: shuffled[i] });
+        // Row 2
+        for(let i=0; i<3; i++) state.map.push({ x: 100 + (i * 260), y: 280, w: 180, h: 140, task: shuffled[i+3] });
 
         // Legend
         const lg = document.getElementById('legend-display');
         lg.innerHTML = '';
         shuffled.forEach(t => {
-            lg.innerHTML += `<div class="legend-item"><div class="color-dot" style="background:${t.color}"></div>${t.name}</div>`;
+            lg.innerHTML += `<div class="legend-item"><div class="color-dot" style="background:${t.color}"></div>${t.name} ${t.icon}</div>`;
         });
 
         // Timer
@@ -312,12 +312,9 @@
         player.holding = null;
         clients = [];
         
-        // Difficulty Scaling
-        // Level 1: 45s wait. Level 2: 15s wait. Level 3: 8s wait.
-        state.goal = 1 + state.level; 
-        
+        state.goal = 2 + state.level; 
         updateHUD();
-        spawnClient(); // First one is free
+        spawnClient(); 
     }
 
     function nextLevel() {
@@ -337,7 +334,7 @@
 
         // 1. Movement
         let dx = 0, dy = 0;
-        const speed = 6;
+        const speed = 5;
         if(keys.w) dy -= speed;
         if(keys.s) dy += speed;
         if(keys.a) dx -= speed;
@@ -345,18 +342,16 @@
         
         player.x += dx; player.y += dy;
         
-        // Bounds (Room Walls)
-        player.x = Math.max(20, Math.min(840, player.x));
-        player.y = Math.max(50, Math.min(deskY - 30, player.y)); // Can't cross desk
+        // Bounds
+        player.x = Math.max(20, Math.min(850, player.x));
+        player.y = Math.max(20, Math.min(deskY - 30, player.y)); // Can't cross reception
 
         if(dx !== 0) player.faceDir = dx > 0 ? 1 : -1;
         if(dx !== 0 || dy !== 0) player.frame += 0.2;
 
-        // 2. Client Spawning (Pacing Logic)
-        // 45 seconds = 45 * 60 = 2700 frames
-        let spawnTime = 2700; 
-        if(state.level > 1) spawnTime = 900; // 15s
-        if(state.level > 2) spawnTime = 400; // 7s
+        // 2. Client Spawning (30s)
+        let spawnTime = 30 * 60; // 30 seconds
+        if(state.level > 1) spawnTime = 15 * 60;
         
         if(state.frame % spawnTime === 0 && clients.length < 3) {
             spawnClient();
@@ -364,11 +359,11 @@
 
         // 3. Client Patience
         clients.forEach((c, i) => {
-            c.patience -= (0.05 + (state.level * 0.02)); // Slow decay
+            c.patience -= (0.05 + (state.level * 0.02)); 
             if(c.patience <= 0) {
                 clients.splice(i, 1);
                 state.patience -= 20;
-                Audio.wompWomp();
+                Audio.bruh(); // Sound Effect
                 spawnParticle(c.x, c.y, "🤬", "red");
                 checkGameOver();
             }
@@ -384,34 +379,32 @@
     }
 
     function spawnClient() {
-        // Pick task
         const t = TASKS[Math.floor(Math.random() * TASKS.length)];
-        // Position evenly
-        const xPos = 150 + (clients.length * 200);
-        
+        const xPos = 200 + (clients.length * 200);
         clients.push({
-            x: xPos, y: deskY + 20, w: 50, h: 60,
+            x: xPos, y: deskY + 10, w: 40, h: 40,
             task: t, patience: 100, maxP: 100
         });
-        Audio.vineBoom(); // Sound effect
+        Audio.vineBoom();
     }
 
     function checkInteraction() {
-        // Cabinets
-        for(let cab of state.map) {
-            if(dist(player, cab) < 90) {
-                player.holding = cab.task;
-                spawnParticle(player.x, player.y - 60, "📂", "white");
-                Audio.playTone(300, 'square', 0.1);
+        // Cubicles
+        for(let cub of state.map) {
+            // Check if player is "inside" the cubicle area
+            if(player.x > cub.x && player.x < cub.x + cub.w &&
+               player.y > cub.y && player.y < cub.y + cub.h) {
+                player.holding = cub.task;
+                spawnParticle(player.x, player.y - 60, "📂", "black");
+                Audio.playTone(400, 'sine', 0.1);
                 return;
             }
         }
         
         // Trash
-        if(dist(player, trashBin) < 70) {
+        if(dist(player, trashBin) < 60) {
             if(player.holding) {
                 player.holding = null;
-                Audio.yeet();
                 spawnParticle(trashBin.x, trashBin.y-50, "🗑️", "gray");
             }
             return;
@@ -420,12 +413,9 @@
         // Clients
         for(let i=0; i<clients.length; i++) {
             let c = clients[i];
-            // Distance check modified because they are on opposite sides of desk
-            let d = Math.hypot(player.x - c.x, player.y - (c.y - 60)); 
-            
-            if(d < 100) {
+            let d = Math.hypot(player.x - c.x, player.y - (c.y - 50)); 
+            if(d < 90) {
                 if(player.holding && player.holding.id === c.task.id) {
-                    // Serve
                     clients.splice(i, 1);
                     state.score++;
                     state.patience = Math.min(100, state.patience + 10);
@@ -439,10 +429,9 @@
                     }
                     return;
                 } else if (player.holding) {
-                    // Wrong
-                    Audio.wompWomp();
                     spawnParticle(c.x, c.y - 100, "❌", "red");
                     state.patience -= 10;
+                    Audio.bruh();
                 }
             }
         }
@@ -452,6 +441,7 @@
         if(state.patience <= 0) {
             state.phase = 'GAMEOVER';
             document.getElementById('game-over-screen').classList.remove('hidden');
+            Audio.leave(); // "You need to leave"
         }
     }
 
@@ -474,68 +464,66 @@
     function draw() {
         ctx.clearRect(0, 0, 900, 650);
 
-        // 1. Room Background
-        // Walls
-        ctx.fillStyle = "#b2bec3";
-        ctx.fillRect(0, 0, 900, 150);
-        // Floor
-        ctx.fillStyle = "#dfe6e9";
-        ctx.fillRect(0, 150, 900, 500);
+        // 1. Floor Plan
+        ctx.fillStyle = "#f5f6fa";
+        ctx.fillRect(0, 0, 900, 650);
         
-        // Windows
-        drawWindow(100, 30);
-        drawWindow(650, 30);
+        // Grid
+        ctx.strokeStyle = "#e1e1e1"; ctx.lineWidth = 1;
+        for(let i=0; i<900; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,650); ctx.stroke(); }
+        for(let i=0; i<650; i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(900,i); ctx.stroke(); }
 
-        // Plants
-        drawPlant(20, 120);
-        drawPlant(840, 120);
+        // 2. Cubicles
+        state.map.forEach(cub => {
+            // Carpet (Color Coded - ALWAYS VISIBLE)
+            ctx.fillStyle = cub.task.color; 
+            ctx.fillRect(cub.x, cub.y, cub.w, cub.h);
+            
+            // Walls (U Shape)
+            ctx.fillStyle = "#b2bec3";
+            const wallThick = 6;
+            // Back
+            ctx.fillRect(cub.x, cub.y, cub.w, wallThick);
+            // Left
+            ctx.fillRect(cub.x, cub.y, wallThick, cub.h);
+            // Right
+            ctx.fillRect(cub.x + cub.w - wallThick, cub.y, wallThick, cub.h);
 
-        // 2. Cabinets (Behind Player)
-        state.map.forEach(c => {
-            // Draw cabinet body
-            ctx.fillStyle = state.phase === 'MEMORIZE' ? c.task.color : '#636e72'; // Color or Dark Grey
-            strokeRect(c.x, c.y, c.w, c.h);
+            // Desk Inside
+            ctx.fillStyle = "white";
+            ctx.fillRect(cub.x + 20, cub.y + 20, cub.w - 40, 40);
             
-            // Drawers
-            ctx.fillStyle = "rgba(0,0,0,0.1)";
-            ctx.fillRect(c.x+10, c.y+10, c.w-20, 20);
-            ctx.fillRect(c.x+10, c.y+50, c.w-20, 20);
-            ctx.fillRect(c.x+10, c.y+90, c.w-20, 20);
-            
+            // Computer Monitor
+            ctx.fillStyle = "#2d3436";
+            ctx.fillRect(cub.x + 40, cub.y + 30, 40, 25);
+
+            // Label (Only during Memorize)
             if(state.phase === 'MEMORIZE') {
                 ctx.fillStyle = "black";
-                ctx.font = "40px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText(c.task.icon, c.x + c.w/2, c.y - 15);
+                ctx.font = "30px Arial";
+                ctx.fillText(cub.task.icon, cub.x + cub.w/2 - 15, cub.y + 100);
+                ctx.font = "14px Courier New";
+                ctx.fillText(cub.task.name, cub.x + cub.w/2 - 20, cub.y + 120);
             }
         });
         
-        // Meeting Table (Middle Decor)
-        ctx.fillStyle = "#fdcb6e";
-        strokeRect(350, 250, 200, 80);
-        ctx.fillStyle = "rgba(0,0,0,0.1)";
-        ctx.beginPath(); ctx.arc(380, 290, 20, 0, Math.PI*2); ctx.fill(); // Mug stains
-        ctx.beginPath(); ctx.arc(500, 270, 10, 0, Math.PI*2); ctx.fill();
-
-        // 3. Player
-        drawPlayer(player);
-
-        // 4. Reception Desk (The "Grey Wall") 
-        // We draw this BEHIND the clients now? No, Clients are AT the desk.
-        // Let's draw the desk body.
-        ctx.fillStyle = "#d63031"; // Red desk top? No, Wood.
-        ctx.fillStyle = "#e17055";
-        strokeRect(0, deskY, 900, 150);
-        
-        // 5. Trash Bin
+        // 3. Reception Desk Area
         ctx.fillStyle = "#636e72";
-        strokeRect(trashBin.x, trashBin.y, trashBin.w, trashBin.h);
-        ctx.fillStyle = "white"; ctx.font="10px Arial"; ctx.fillText("TRASH", trashBin.x+5, trashBin.y+30);
+        ctx.fillRect(0, deskY, 900, 10); // Barrier
+        
+        // Trash
+        ctx.fillStyle = "#b2bec3";
+        ctx.fillRect(trashBin.x, trashBin.y, trashBin.w, trashBin.h);
+        ctx.strokeRect(trashBin.x, trashBin.y, trashBin.w, trashBin.h);
+        ctx.fillStyle = "black"; ctx.font="20px Arial"; ctx.fillText("🗑️", trashBin.x+5, trashBin.y+30);
 
-        // 6. Clients (In Front of Desk)
+        // 4. Clients
         clients.forEach(drawClient);
 
-        // 7. Particles
+        // 5. Player
+        drawPlayer(player);
+
+        // 6. Particles
         particles.forEach((p, i) => {
             ctx.fillStyle = p.col;
             ctx.font = "40px Arial";
@@ -545,97 +533,57 @@
         });
     }
 
-    function strokeRect(x, y, w, h) {
-        ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill();
-        ctx.lineWidth = 4; ctx.strokeStyle = "black"; ctx.stroke();
-    }
-
-    function drawWindow(x, y) {
-        ctx.fillStyle = "#74b9ff"; // Sky
-        strokeRect(x, y, 150, 80);
-        ctx.strokeStyle = "white"; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(x+75, y); ctx.lineTo(x+75, y+80); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x, y+40); ctx.lineTo(x+150, y+40); ctx.stroke();
-        // Sun
-        ctx.fillStyle = "#ffeaa7";
-        ctx.beginPath(); ctx.arc(x+120, y+20, 15, 0, Math.PI*2); ctx.fill();
-    }
-
-    function drawPlant(x, y) {
-        // Pot
-        ctx.fillStyle = "#e17055";
-        strokeRect(x, y+20, 40, 40);
-        // Greenery
-        ctx.fillStyle = "#00b894";
-        ctx.beginPath(); ctx.arc(x+20, y+10, 25, 0, Math.PI*2); ctx.fill(); 
-        ctx.strokeStyle="black"; ctx.stroke();
-    }
-
     function drawPlayer(p) {
-        let bob = Math.sin(p.frame) * 4;
-        // Shadow
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.beginPath(); ctx.ellipse(p.x + p.w/2, p.y + p.h - 5, 20, 8, 0, 0, Math.PI*2); ctx.fill();
-
-        // Body
-        ctx.fillStyle = "#0984e3"; // Blue Suit
-        strokeRect(p.x, p.y + bob, p.w, p.h);
+        let bob = Math.sin(p.frame) * 3;
         
         // Head
         ctx.fillStyle = "#ffeaa7";
-        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y - 10 + bob, 25, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "black"; ctx.stroke();
+        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + bob, 15, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "black"; ctx.lineWidth=2; ctx.stroke();
         
-        // Eyes
-        ctx.fillStyle = "black";
-        let off = p.faceDir * 6;
-        ctx.beginPath(); ctx.arc(p.x + p.w/2 + off - 6, p.y - 10 + bob, 3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(p.x + p.w/2 + off + 6, p.y - 10 + bob, 3, 0, Math.PI*2); ctx.fill();
+        // Body (Circle - Oversimplified style)
+        ctx.fillStyle = "#0984e3"; 
+        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + 25 + bob, 12, 0, Math.PI*2); ctx.fill();
+        ctx.stroke();
 
         // Holding
         if(p.holding) {
             ctx.fillStyle = p.holding.color;
-            strokeRect(p.x + 10 + (p.faceDir*10), p.y + 20 + bob, 25, 30);
-            ctx.fillStyle = "black"; ctx.font="20px Arial";
-            ctx.fillText(p.holding.icon, p.x + 12 + (p.faceDir*10), p.y + 42 + bob);
+            ctx.fillRect(p.x + 20, p.y + 10 + bob, 15, 20);
+            ctx.strokeRect(p.x + 20, p.y + 10 + bob, 15, 20);
         }
     }
 
     function drawClient(c) {
         let bob = Math.sin(state.frame * 0.1) * 3;
         
-        // They stand "on top" of the desk visually
         // Body
-        ctx.fillStyle = c.task.color; // Shirt matches request color? No that makes it too easy.
-        ctx.fillStyle = "#e84393"; // Pink shirt
-        strokeRect(c.x, c.y + bob, c.w, c.h);
+        ctx.fillStyle = c.task.color; // Wearing the color of the task? No, random.
+        ctx.fillStyle = "#fd79a8";
+        ctx.beginPath(); ctx.arc(c.x + c.w/2, c.y + 25 + bob, 15, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle="black"; ctx.lineWidth=2; ctx.stroke();
         
         // Head
-        ctx.fillStyle = "#ff7675"; // Skin
-        ctx.beginPath(); ctx.arc(c.x + c.w/2, c.y - 15 + bob, 25, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle="black"; ctx.stroke();
-        
-        // Face
-        ctx.fillStyle = "black";
-        ctx.beginPath(); ctx.arc(c.x + 15, c.y - 15 + bob, 3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(c.x + 35, c.y - 15 + bob, 3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(c.x + 20, c.y + 0 + bob); ctx.lineTo(c.x + 30, c.y + 0 + bob); ctx.stroke(); // Mouth
+        ctx.fillStyle = "#ffeaa7";
+        ctx.beginPath(); ctx.arc(c.x + c.w/2, c.y + bob, 18, 0, Math.PI*2); ctx.fill();
+        ctx.stroke();
 
-        // Thought Bubble (High up)
+        // Bubble
         ctx.fillStyle = "white";
-        ctx.beginPath(); ctx.ellipse(c.x + 80, c.y - 50 + bob, 40, 30, 0, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle="black"; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(c.x + 50, c.y - 40 + bob, 35, 25, 0, 0, Math.PI*2); ctx.fill();
+        ctx.stroke();
         
         // Icon
         ctx.fillStyle = "black"; ctx.font="30px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(c.task.icon, c.x + 80, c.y - 40 + bob);
-        
-        // Patience Bar
+        ctx.fillText(c.task.icon, c.x + 50, c.y - 32 + bob);
+
+        // Patience
         ctx.fillStyle = "white";
-        strokeRect(c.x - 10, c.y + 70, 70, 10);
+        ctx.fillRect(c.x - 10, c.y + 50, 60, 8);
+        ctx.strokeRect(c.x - 10, c.y + 50, 60, 8);
         ctx.fillStyle = c.patience < 30 ? "red" : "#00b894";
-        ctx.fillRect(c.x - 9, c.y + 71, 68 * (c.patience/100), 8);
+        ctx.fillRect(c.x - 9, c.y + 51, 58 * (c.patience/100), 6);
     }
 
     init();
