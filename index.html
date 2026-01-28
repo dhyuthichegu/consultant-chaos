@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Analyst: HD Office</title>
+    <title>Consulting Chaos</title>
     <style>
         :root {
             --bg-color: #2f3640;
@@ -140,7 +140,7 @@
         <div id="screens">
             <!-- Start Screen -->
             <div id="start-screen" class="modal">
-                <h1>The Office Game</h1>
+                <h1>Consulting Chaos</h1>
                 <p>Welcome to the grind.</p>
                 <div style="text-align: left; background: #eee; padding: 20px; border: 3px solid black; margin: 20px 0;">
                     <p>1. <strong>Memorize</strong> the room colors.</p>
@@ -170,7 +170,7 @@
 <script>
 /**
  * THE ANALYST V7.0
- * "HD Office Visuals"
+ * "HD Office Visuals + Dynamic Combat"
  */
 
 // --- ASSETS ---
@@ -209,7 +209,8 @@ const AUDIO = {
     },
     bruh: function() { this.speak("Bruh", 0.5, 0.5); },
     leave: function() { this.speak("You need to leave", 0.8, 1); },
-    vine: function() { this.playTone(60, 'sawtooth', 0.6); }
+    vine: function() { this.playTone(60, 'sawtooth', 0.6); },
+    splat: function() { this.playTone(150, 'triangle', 0.2); } // Wet thud
 };
 
 // --- ENGINE ---
@@ -219,9 +220,11 @@ const Game = {
     
     state: { phase: 'IDLE', level: 1, score: 0, goal: 2, sanity: 100, frame: 0 },
     map: [],
-    player: { x: 480, y: 350, w: 30, h: 30, holding: null, frame: 0 },
+    player: { x: 480, y: 350, w: 30, h: 30, holding: null, frame: 0, stun: 0 }, // Added 'stun'
     clients: [],
+    projectiles: [], // NEW: Array for coffee cups
     particles: [],
+    splats: [], // NEW: Floor stains
     
     // Config
     deskY: 520,
@@ -285,7 +288,10 @@ const Game = {
             this.state.score = 0;
             this.state.sanity = 100;
             this.player.holding = null;
+            this.player.stun = 0;
             this.clients = [];
+            this.projectiles = []; // Clear old coffee
+            this.splats = [];
             this.state.goal = 1 + this.state.level;
             this.spawnClient();
         }
@@ -306,37 +312,76 @@ const Game = {
         if(this.state.phase !== 'PLAYING') return;
         this.state.frame++;
 
-        // Move
-        let dx = 0, dy = 0;
-        const spd = 6;
-        if(this.keys['w'] || this.keys['ArrowUp']) dy = -spd;
-        if(this.keys['s'] || this.keys['ArrowDown']) dy = spd;
-        if(this.keys['a'] || this.keys['ArrowLeft']) dx = -spd;
-        if(this.keys['d'] || this.keys['ArrowRight']) dx = spd;
-        
-        this.player.x = Math.max(20, Math.min(940, this.player.x + dx));
-        this.player.y = Math.max(20, Math.min(this.deskY - 30, this.player.y + dy));
-        if(dx||dy) this.player.frame += 0.25;
+        // 0. Stun Logic
+        if(this.player.stun > 0) {
+            this.player.stun--;
+            // Skip movement if stunned
+        } else {
+            // 1. Move
+            let dx = 0, dy = 0;
+            const spd = 6;
+            if(this.keys['w'] || this.keys['ArrowUp']) dy = -spd;
+            if(this.keys['s'] || this.keys['ArrowDown']) dy = spd;
+            if(this.keys['a'] || this.keys['ArrowLeft']) dx = -spd;
+            if(this.keys['d'] || this.keys['ArrowRight']) dx = spd;
+            
+            this.player.x = Math.max(20, Math.min(940, this.player.x + dx));
+            this.player.y = Math.max(20, Math.min(this.deskY - 30, this.player.y + dy));
+            if(dx||dy) this.player.frame += 0.25;
+
+             // Interact
+            if(this.keys['Space'] && !this.lockSpace) {
+                this.interact();
+                this.lockSpace = true;
+            }
+        }
 
         // Clients
         let rate = this.state.level === 1 ? 1800 : 1200;
         if(this.state.frame % rate === 0 && this.clients.length < 3) this.spawnClient();
 
         this.clients.forEach((c, i) => {
-            c.patience -= (0.05 + (this.state.level * 0.02));
-            if(c.patience <= 0) {
-                this.clients.splice(i, 1);
-                this.state.sanity -= 25;
-                AUDIO.bruh();
-                this.particle(c.x, c.y, "🤬", "red");
-                if(this.state.sanity <= 0) this.gameOver();
+            if(c.state === 'WAITING') {
+                c.patience -= (0.05 + (this.state.level * 0.02));
+                if(c.patience <= 0) {
+                    // TRANSFORM TO ANGRY
+                    c.state = 'ANGRY';
+                    this.state.sanity -= 10;
+                    AUDIO.bruh();
+                    this.particle(c.x, c.y, "🤬", "red");
+                    this.throwProjectile(c); // Immediate attack
+                }
+            } else if (c.state === 'ANGRY') {
+                // Keep throwing periodically
+                if(this.state.frame % 120 === 0) { // Every 2 seconds
+                     this.throwProjectile(c);
+                }
             }
         });
 
-        // Interact
-        if(this.keys['Space'] && !this.lockSpace) {
-            this.interact();
-            this.lockSpace = true;
+        // Update Projectiles
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            let p = this.projectiles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            
+            // Bounds check
+            if(p.x < 0 || p.x > 960 || p.y < 0 || p.y > 640) {
+                this.projectiles.splice(i, 1);
+                continue;
+            }
+
+            // Hit Player?
+            if(Math.hypot(p.x - this.player.x, p.y - this.player.y) < 30) {
+                // HIT!
+                this.state.sanity -= 15;
+                this.player.stun = 30; // 0.5s stun
+                AUDIO.splat();
+                this.projectiles.splice(i, 1);
+                this.splats.push({x: this.player.x, y: this.player.y, life: 600}); // Stain on floor
+                this.particle(this.player.x, this.player.y, "💥", "orange");
+                if(this.state.sanity <= 0) this.gameOver();
+            }
         }
 
         // HUD
@@ -351,9 +396,24 @@ const Game = {
         this.clients.push({
             x: 150 + (this.clients.length * 250),
             y: this.deskY + 40, w: 40, h: 40,
-            task: t, patience: 100
+            task: t, patience: 100, state: 'WAITING'
         });
         AUDIO.vine();
+    },
+
+    throwProjectile: function(client) {
+        // Target player
+        const dx = this.player.x - client.x;
+        const dy = this.player.y - client.y;
+        const dist = Math.hypot(dx, dy);
+        const speed = 8;
+        
+        this.projectiles.push({
+            x: client.x, y: client.y,
+            vx: (dx/dist) * speed,
+            vy: (dy/dist) * speed,
+            rot: 0
+        });
     },
 
     interact: function() {
@@ -380,6 +440,9 @@ const Game = {
         // Clients
         for(let i=0; i<this.clients.length; i++) {
             let c = this.clients[i];
+            // Can only serve WAITING clients
+            if(c.state !== 'WAITING') continue;
+
             if(Math.hypot(p.x - c.x, p.y - (c.y - 60)) < 90) {
                 if(p.holding && p.holding.id === c.task.id) {
                     this.clients.splice(i, 1);
@@ -430,6 +493,12 @@ const Game = {
         ctx.strokeStyle = "#e1e1e1"; ctx.lineWidth = 2;
         for(let i=0; i<960; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,640); ctx.stroke(); }
         
+        // Splats (Coffee Stains)
+        this.splats.forEach(s => {
+            ctx.fillStyle = "rgba(101, 67, 33, 0.5)"; // Coffee brown
+            ctx.beginPath(); ctx.ellipse(s.x, s.y, 25, 15, 0, 0, Math.PI*2); ctx.fill();
+        });
+
         // Plants (Decor)
         this.drawPlant(20, 300); this.drawPlant(900, 300);
 
@@ -444,6 +513,13 @@ const Game = {
 
         // Clients
         this.clients.forEach(c => this.drawClient(c));
+
+        // Projectiles
+        this.projectiles.forEach(p => {
+            // Draw Cup
+            this.circle(p.x, p.y, 10, "white"); // Lid
+            ctx.fillStyle = "#6F4E37"; ctx.fillRect(p.x-6, p.y-6, 12, 12); // Coffee
+        });
 
         // Player
         this.drawPlayer(this.player);
@@ -509,6 +585,9 @@ const Game = {
         ctx.fillStyle = "rgba(0,0,0,0.2)";
         ctx.beginPath(); ctx.ellipse(p.x, p.y + 35, 20, 8, 0, 0, Math.PI*2); ctx.fill();
 
+        // Stun effect?
+        if(p.stun > 0 && Math.floor(this.state.frame/5)%2===0) return; // Blink
+
         // Body
         this.circle(p.x, p.y + 25 + bob, 18, "#0984e3");
         // Head
@@ -538,24 +617,38 @@ const Game = {
         const bob = Math.sin(this.state.frame * 0.1) * 3;
 
         // Body
-        this.circle(c.x, c.y + 25 + bob, 18, "#ff7675");
+        let col = c.state === 'ANGRY' ? "#e17055" : "#ff7675"; // Darker if angry
+        this.circle(c.x, c.y + 25 + bob, 18, col);
         // Head
         this.circle(c.x, c.y + bob, 22, "#ffeaa7");
+        
         // Face
         ctx.fillStyle="black";
-        ctx.beginPath(); ctx.arc(c.x-8, c.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(c.x+8, c.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+        if(c.state === 'ANGRY') {
+             // Angry Eyes
+             ctx.lineWidth=2; 
+             ctx.beginPath(); ctx.moveTo(c.x-12, c.y-5+bob); ctx.lineTo(c.x-2, c.y+bob); ctx.stroke();
+             ctx.beginPath(); ctx.moveTo(c.x+12, c.y-5+bob); ctx.lineTo(c.x+2, c.y+bob); ctx.stroke();
+        } else {
+             // Normal Eyes
+             ctx.beginPath(); ctx.arc(c.x-8, c.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+             ctx.beginPath(); ctx.arc(c.x+8, c.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+        }
 
         // Request Bubble
         ctx.beginPath(); ctx.moveTo(c.x, c.y - 30 + bob); ctx.lineTo(c.x + 30, c.y - 60 + bob); ctx.stroke();
         this.circle(c.x + 40, c.y - 65 + bob, 30, "white");
         ctx.fillStyle = "black"; ctx.font = "35px Arial"; ctx.textAlign="center";
-        ctx.fillText(c.task.icon, c.x + 40, c.y - 52 + bob);
-
-        // Patience
-        this.rect(c.x - 25, c.y + 55, 50, 10, "white");
-        ctx.fillStyle = c.patience < 30 ? "red" : "#00b894";
-        ctx.fillRect(c.x - 23, c.y + 57, 46 * (c.patience/100), 6);
+        
+        if(c.state === 'ANGRY') {
+            ctx.fillText("🤬", c.x + 40, c.y - 52 + bob);
+        } else {
+            ctx.fillText(c.task.icon, c.x + 40, c.y - 52 + bob);
+            // Patience
+            this.rect(c.x - 25, c.y + 55, 50, 10, "white");
+            ctx.fillStyle = c.patience < 30 ? "red" : "#00b894";
+            ctx.fillRect(c.x - 23, c.y + 57, 46 * (c.patience/100), 6);
+        }
     },
 
     drawPlant: function(x, y) {
