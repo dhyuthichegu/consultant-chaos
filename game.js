@@ -24,30 +24,29 @@ const AUDIO = {
         vine: new Audio('sounds/vine-boom.mp3'),
         yippee: new Audio('sounds/yippee.mp3'),
         bonk: new Audio('sounds/bonk.mp3'),
-        metal: new Audio('sounds/metal-pipe.mp3')
+        leave: new Audio('sounds/leave.mp3')
     },
     
     play: function(key) {
         if(this.sounds[key]) {
+            this.sounds[key].volume = 0.4; // Lower volume
             this.sounds[key].currentTime = 0;
             this.sounds[key].play().catch(e => console.log("Audio play failed:", e));
         }
     },
 
-    // TTS Fallback for specific lines
+    // TTS Fallback
     speak: function(txt) {
         if(!window.speechSynthesis) return;
         window.speechSynthesis.cancel();
         const ut = new SpeechSynthesisUtterance(txt);
         ut.rate = 0.9;
+        ut.volume = 0.4;
         window.speechSynthesis.speak(ut);
     },
 
     bruh: function() { this.play('bruh'); },
-    leave: function() { 
-        this.play('metal'); // Metal pipe for chaos
-        setTimeout(() => this.speak("You need to leave."), 1000); 
-    },
+    leave: function() { this.play('leave'); },
     vine: function() { this.play('vine'); },
     splat: function() { this.play('bonk'); },
     success: function() { this.play('yippee'); }
@@ -117,17 +116,6 @@ const Game = {
             this.map.forEach(c => {
                 lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`;
             });
-
-            // Add Skip Button dynamically if not exists
-            if(!document.getElementById('btn-skip')) {
-                const btn = document.createElement('button');
-                btn.id = 'btn-skip';
-                btn.className = 'btn';
-                btn.innerText = "SKIP TIMER ⏭️";
-                btn.style.marginTop = "20px";
-                btn.onclick = () => Game.skipMemory();
-                document.getElementById('memory-overlay').appendChild(btn);
-            }
 
             // Timer
             let t = 20;
