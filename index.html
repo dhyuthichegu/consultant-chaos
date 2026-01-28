@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Analyst's Memory</title>
+    <title>The Analyst's Memory: Oversimplified</title>
     <style>
         :root {
-            --bg-color: #2c3e50;
-            --ui-bg: #34495e;
-            --text-color: #ecf0f1;
+            --bg-color: #8fb8e2; /* Sky blueish background */
+            --floor-color: #f4f4f4;
+            --ui-bg: #2c3e50;
+            --text-color: #333;
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Verdana', sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
             margin: 0;
             padding: 0;
             display: flex;
@@ -23,46 +23,42 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
+            user-select: none;
         }
 
         #game-container {
             position: relative;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            border: 8px solid #34495e;
-            border-radius: 10px;
-            background-color: #7f8c8d; /* Floor color */
+            box-shadow: 0 20px 0 rgba(0,0,0,0.2);
+            border: 6px solid #000; /* Thick outline */
+            border-radius: 12px;
+            background-color: var(--floor-color);
+            overflow: hidden;
         }
 
-        canvas {
-            display: block;
-        }
+        canvas { display: block; }
 
-        /* UI Overlays */
+        /* HUD */
         #ui-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Let clicks pass through to canvas if needed */
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            pointer-events: none;
             display: flex;
-            flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
         }
 
-        .hud-panel {
-            background: rgba(0, 0, 0, 0.7);
+        .hud-pill {
+            background: white;
+            border: 3px solid black;
             padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 20px;
+            border-radius: 50px;
             font-weight: bold;
-            color: white;
-            display: inline-block;
-            pointer-events: auto;
+            font-size: 20px;
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.2);
         }
 
+        /* Screens */
         #screens {
             position: absolute;
             top: 0;
@@ -78,34 +74,35 @@
 
         .modal {
             background: white;
-            color: #333;
+            border: 5px solid black;
+            border-radius: 20px;
             padding: 40px;
-            border-radius: 8px;
-            max-width: 600px;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            box-shadow: 15px 15px 0 rgba(0,0,0,0.2);
+            max-width: 600px;
         }
 
         .hidden { display: none !important; }
 
-        h1 { margin-top: 0; color: #2c3e50; }
-        h2 { color: #c0392b; }
+        h1 { margin: 0 0 20px 0; font-size: 36px; -webkit-text-stroke: 1px black; }
+        p { font-size: 18px; line-height: 1.5; }
         
         .btn {
-            background: #2980b9;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-top: 20px;
+            background: #ffcc00;
+            border: 3px solid black;
+            padding: 15px 40px;
+            font-size: 24px;
             font-weight: bold;
-            transition: 0.2s;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 5px 5px 0 black;
+            transition: transform 0.1s;
         }
-        .btn:hover { transform: scale(1.05); background: #3498db; }
-        .btn-red { background: #c0392b; }
+        .btn:active { transform: translate(5px, 5px); box-shadow: none; }
+        .btn:hover { background: #ffe066; }
 
+        /* Legend Grid */
         .legend-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -117,24 +114,20 @@
             display: flex;
             align-items: center;
             font-size: 18px;
-            padding: 5px;
+            padding: 10px;
+            border: 2px solid black;
+            border-radius: 8px;
             background: #eee;
-            border-radius: 4px;
         }
-        .color-box {
-            width: 25px;
-            height: 25px;
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid black;
             margin-right: 10px;
-            border: 2px solid #333;
         }
 
-        #timer-big {
-            font-size: 60px;
-            color: white;
-            font-weight: bold;
-            text-shadow: 2px 2px 0 #000;
-        }
-
+        #timer-big { font-size: 80px; font-weight: 900; -webkit-text-stroke: 3px black; color: white; margin: 20px 0; text-shadow: 5px 5px 0 black;}
     </style>
 </head>
 <body>
@@ -143,415 +136,487 @@
         <canvas id="gameCanvas" width="900" height="650"></canvas>
 
         <div id="ui-layer">
-            <div style="display: flex; justify-content: space-between;">
-                <div class="hud-panel">🏆 Score: <span id="score">0</span></div>
-                <div class="hud-panel">❤️ Patience: <span id="lives">100%</span></div>
-            </div>
-            <div style="text-align: center;">
-                <div id="interaction-prompt" class="hud-panel hidden">PRESS [SPACE] TO GRAB</div>
-            </div>
+            <div class="hud-pill">📅 Q<span id="level-display">1</span></div>
+            <div class="hud-pill">✅ Served: <span id="served-display">0</span>/<span id="goal-display">5</span></div>
+            <div class="hud-pill">❤️ <span id="lives-display">100%</span></div>
         </div>
 
         <div id="screens">
             <!-- Start Screen -->
             <div id="start-screen" class="modal">
-                <h1>The Analyst's Memory</h1>
-                <p>Welcome to the Firm. We value <strong>attention to detail</strong>.</p>
-                <p><strong>HOW TO PLAY:</strong></p>
-                <ul style="text-align: left; margin: 20px 40px;">
-                    <li>You have <strong>20 SECONDS</strong> to memorize where the files are kept.</li>
-                    <li>After the timer, the labels disappear!</li>
-                    <li>Clients will ask for files (e.g., "Deck", "Model").</li>
-                    <li>Run to the correct colored cabinet and press <strong>SPACE</strong> to grab the file.</li>
-                    <li>Run back to the client and press <strong>SPACE</strong> to deliver.</li>
-                </ul>
-                <button class="btn" onclick="startMemoryPhase()">START INTERNSHIP</button>
-            </div>
-
-            <!-- Memory Phase Screen (Overlay) -->
-            <div id="memory-screen" class="modal hidden" style="background: rgba(0,0,0,0.8); color: white; width: 100%; height: 100%; max-width: none; border-radius: 0;">
-                <h1>MEMORIZE THE LOCATIONS!</h1>
-                <div id="timer-big">20</div>
-                <p>Look at the office layout below.</p>
-                <div id="legend-display" class="legend-grid" style="background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px; color: black; max-width: 500px; margin: 20px auto;">
-                    <!-- Populated by JS -->
+                <h1>THE ANALYST</h1>
+                <p><strong>Look sharp.</strong> The partners are watching.</p>
+                <div style="background:#eee; padding:20px; border-radius:10px; border:2px solid black; margin:20px 0; text-align:left;">
+                    <p>1. <strong>MEMORIZE</strong> the cabinet colors (20s).</p>
+                    <p>2. <strong>FETCH</strong> files for clients.</p>
+                    <p>3. <strong>DROP</strong> items in the trash 🗑️ if you mess up.</p>
+                    <p>4. <strong>SURVIVE</strong> the fiscal quarter.</p>
                 </div>
+                <button class="btn" onclick="startMemoryPhase()">START CAREER</button>
             </div>
 
-            <!-- Game Over Screen -->
+            <!-- Memory Phase -->
+            <div id="memory-screen" class="modal hidden" style="width: 100%; height: 100%; max-width: none; border: none; border-radius: 0; background: rgba(0,0,0,0.85); color: white;">
+                <h1>MEMORIZE!</h1>
+                <div id="timer-big">20</div>
+                <div id="legend-display" class="legend-grid" style="background: white; color: black; max-width: 600px; margin: 0 auto; border: 4px solid black; box-shadow: 10px 10px 0 black;"></div>
+            </div>
+
+            <!-- Level Complete -->
+            <div id="level-screen" class="modal hidden">
+                <h1 style="color: #2ecc71;">QUARTER COMPLETE!</h1>
+                <p>Performance Review: <strong>EXCEEDS EXPECTATIONS</strong></p>
+                <p>The partners are increasing your workload.</p>
+                <button class="btn" onclick="nextLevel()">START NEXT Q</button>
+            </div>
+
+            <!-- Game Over -->
             <div id="game-over-screen" class="modal hidden">
-                <h2>YOU'RE FIRED</h2>
-                <p>You forgot where the files were, or you were too slow.</p>
-                <p>Final Score: <span id="final-score">0</span></p>
-                <button class="btn btn-red" onclick="location.reload()">RE-APPLY (Try Again)</button>
+                <h1 style="color: #e74c3c;">FIRED</h1>
+                <p>You couldn't handle the pressure.</p>
+                <p>Quarters Survived: <span id="final-level">1</span></p>
+                <button class="btn" onclick="location.reload()">RE-APPLY</button>
             </div>
         </div>
     </div>
 
 <script>
-    /** 
-     * THE ANALYST'S MEMORY
-     * A memory + movement arcade game.
-     */
-
-    // --- CONFIGURATION ---
+    // --- CONSTANTS ---
+    const COLORS = {
+        red: '#ff6b6b', blue: '#48dbfb', green: '#1dd1a1', yellow: '#feca57', purple: '#9c88ff', orange: '#ff9f43'
+    };
+    
     const TASKS = [
-        { id: 'deck', name: 'Pitch Deck', icon: '📊', color: '#e74c3c' }, // Red
-        { id: 'model', name: 'Financial Model', icon: '📉', color: '#2ecc71' }, // Green
-        { id: 'legal', name: 'Legal Contract', icon: '⚖️', color: '#f1c40f' }, // Yellow
-        { id: 'research', name: 'User Research', icon: '🔍', color: '#9b59b6' }, // Purple
-        { id: 'tech', name: 'Tech Stack', icon: '💻', color: '#3498db' }, // Blue
-        { id: 'coffee', name: 'Coffee Run', icon: '☕', color: '#e67e22' } // Orange
+        { id: 'deck', name: 'Pitch Deck', icon: '📊', color: COLORS.red },
+        { id: 'model', name: 'Excel Model', icon: '📉', color: COLORS.green },
+        { id: 'legal', name: 'Contract', icon: '📜', color: COLORS.yellow },
+        { id: 'data', name: 'Research', icon: '🔍', color: COLORS.blue },
+        { id: 'coffee', name: 'Coffee', icon: '☕', color: COLORS.orange },
+        { id: 'tech', name: 'IT Support', icon: '💻', color: COLORS.purple }
     ];
 
-    const CANVAS_WIDTH = 900;
-    const CANVAS_HEIGHT = 650;
-    const PLAYER_SPEED = 6;
-
-    // --- STATE ---
-    let canvas, ctx;
-    let gameState = 'START'; // START, MEMORIZE, PLAYING, GAMEOVER
-    let frame = 0;
-    let score = 0;
-    let globalPatience = 100;
-    let memoryTimer = 20;
-    let mapConfiguration = []; // Stores which cabinet holds which task
-
-    // Entities
-    let player = { x: 450, y: 500, w: 40, h: 40, holding: null, frame: 0, dir: 1 };
-    let cabinets = [];
-    let clients = [];
-    let particles = [];
+    // --- GAME STATE ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
     
-    // Inputs
-    const keys = { w: false, a: false, s: false, d: false, space: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
-    let spaceLocked = false; // Prevent holding space spam
-
-    // --- INITIALIZATION ---
-    window.onload = function() {
-        canvas = document.getElementById('gameCanvas');
-        ctx = canvas.getContext('2d');
-        
-        // Listeners
-        window.addEventListener('keydown', (e) => {
-            if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) keys[e.key] = true;
-            if(e.code === 'Space') keys['space'] = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) keys[e.key] = false;
-            if(e.code === 'Space') { keys['space'] = false; spaceLocked = false; }
-        });
-
-        // Initial Draw to show background
-        draw();
+    let state = {
+        phase: 'START', // START, MEMORIZE, PLAYING, LEVEL_DONE, GAMEOVER
+        level: 1,
+        score: 0,
+        goal: 5,
+        patience: 100,
+        map: [], // Cabinet layout
+        frame: 0
     };
+
+    let player = { x: 450, y: 400, w: 40, h: 60, holding: null, frame: 0, faceDir: 1 };
+    let clients = [];
+    let cabinets = [];
+    let particles = [];
+    let trashBin = { x: 800, y: 500, w: 50, h: 60 };
+
+    // Inputs
+    const keys = { w: false, a: false, s: false, d: false, space: false };
+    let spaceLocked = false;
+
+    window.addEventListener('keydown', e => {
+        if (e.key === ' ' || e.code === 'Space') keys.space = true;
+        if (e.key === 'w' || e.key === 'ArrowUp') keys.w = true;
+        if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = true;
+        if (e.key === 's' || e.key === 'ArrowDown') keys.s = true;
+        if (e.key === 'd' || e.key === 'ArrowRight') keys.d = true;
+    });
+    window.addEventListener('keyup', e => {
+        if (e.key === ' ' || e.code === 'Space') { keys.space = false; spaceLocked = false; }
+        if (e.key === 'w' || e.key === 'ArrowUp') keys.w = false;
+        if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = false;
+        if (e.key === 's' || e.key === 'ArrowDown') keys.s = false;
+        if (e.key === 'd' || e.key === 'ArrowRight') keys.d = false;
+    });
+
+    // --- GAME LOGIC ---
+
+    function init() {
+        requestAnimationFrame(loop);
+    }
 
     function startMemoryPhase() {
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('memory-screen').classList.remove('hidden');
-        
-        // 1. Randomize Cabinet Locations
-        // We create a layout of 2 rows of 3 cabinets
+
+        // Generate Map
         cabinets = [];
-        let shuffledTasks = [...TASKS].sort(() => 0.5 - Math.random());
-        mapConfiguration = shuffledTasks;
+        let shuffled = [...TASKS].sort(() => Math.random() - 0.5);
+        
+        // Row 1
+        for(let i=0; i<3; i++) cabinets.push({ x: 150 + (i * 250), y: 120, w: 90, h: 100, task: shuffled[i] });
+        // Row 2
+        for(let i=0; i<3; i++) cabinets.push({ x: 150 + (i * 250), y: 300, w: 90, h: 100, task: shuffled[i+3] });
 
-        // Row 1 (Top)
-        for(let i=0; i<3; i++) {
-            cabinets.push({ x: 150 + (i * 250), y: 100, w: 80, h: 100, task: shuffledTasks[i] });
-        }
-        // Row 2 (Middle)
-        for(let i=0; i<3; i++) {
-            cabinets.push({ x: 150 + (i * 250), y: 300, w: 80, h: 100, task: shuffledTasks[i+3] });
-        }
+        state.map = cabinets;
 
-        // 2. Populate Legend for User
-        const legendDiv = document.getElementById('legend-display');
-        legendDiv.innerHTML = '';
-        shuffledTasks.forEach(t => {
-            legendDiv.innerHTML += `
+        // Show Legend
+        const lg = document.getElementById('legend-display');
+        lg.innerHTML = '';
+        shuffled.forEach(t => {
+            lg.innerHTML += `
                 <div class="legend-item">
-                    <div class="color-box" style="background:${t.color}"></div>
-                    <span>= ${t.name} ${t.icon}</span>
+                    <div class="color-dot" style="background:${t.color}"></div>
+                    <strong>${t.name}</strong> <span style="margin-left:5px">${t.icon}</span>
                 </div>
             `;
         });
 
-        gameState = 'MEMORIZE';
-        gameLoop();
-
-        // 3. Start Timer
-        let interval = setInterval(() => {
-            if(gameState !== 'MEMORIZE') { clearInterval(interval); return; }
-            memoryTimer--;
-            document.getElementById('timer-big').innerText = memoryTimer;
-            if(memoryTimer <= 0) {
-                clearInterval(interval);
-                startGameplay();
+        // Timer
+        let t = 20;
+        let timerEl = document.getElementById('timer-big');
+        state.phase = 'MEMORIZE';
+        
+        let intv = setInterval(() => {
+            if(state.phase !== 'MEMORIZE') { clearInterval(intv); return; }
+            t--;
+            timerEl.innerText = t;
+            if (t <= 0) {
+                clearInterval(intv);
+                startLevel();
             }
         }, 1000);
     }
 
-    function startGameplay() {
+    function startLevel() {
         document.getElementById('memory-screen').classList.add('hidden');
-        gameState = 'PLAYING';
-        globalPatience = 100;
-        score = 0;
+        document.getElementById('level-screen').classList.add('hidden');
+        state.phase = 'PLAYING';
+        state.score = 0;
+        state.goal = 5 + (state.level * 3); // Scale goal
+        state.patience = 100;
         clients = [];
-        
-        // Spawn first client immediately
+        player.holding = null;
+        updateHUD();
         spawnClient();
     }
 
-    // --- GAME LOOP ---
-    function gameLoop() {
-        if(gameState === 'GAMEOVER') return;
+    function nextLevel() {
+        state.level++;
+        startLevel();
+    }
 
+    function loop() {
         update();
         draw();
-        requestAnimationFrame(gameLoop);
+        requestAnimationFrame(loop);
     }
 
     function update() {
-        frame++;
+        if (state.phase !== 'PLAYING') return;
+        state.frame++;
 
-        // 1. Movement
-        let dx = 0; let dy = 0;
-        if (keys['w'] || keys['ArrowUp']) dy = -PLAYER_SPEED;
-        if (keys['s'] || keys['ArrowDown']) dy = PLAYER_SPEED;
-        if (keys['a'] || keys['ArrowLeft']) dx = -PLAYER_SPEED;
-        if (keys['d'] || keys['ArrowRight']) dx = PLAYER_SPEED;
+        // Player Move
+        let dx = 0, dy = 0;
+        const speed = 7;
+        if (keys.w) dy -= speed;
+        if (keys.s) dy += speed;
+        if (keys.a) dx -= speed;
+        if (keys.d) dx += speed;
 
-        // Normalize diagonal
-        if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+        if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; } // Normalize diagonal
 
-        // Wall collisions (Simple bounds)
-        if (player.x + dx > 0 && player.x + dx < CANVAS_WIDTH - player.w) player.x += dx;
-        if (player.y + dy > 150 && player.y + dy < CANVAS_HEIGHT - player.h) player.y += dy; // Keep below reception wall
+        player.x += dx;
+        player.y += dy;
+        
+        // Bounds
+        player.x = Math.max(0, Math.min(900 - player.w, player.x));
+        player.y = Math.max(150, Math.min(650 - player.h, player.y)); // Can't walk into walls
 
-        // Animation state
+        // Face direction
+        if (dx > 0) player.faceDir = 1;
+        if (dx < 0) player.faceDir = -1;
+
+        // Animation
         if (dx !== 0 || dy !== 0) player.frame += 0.2;
 
-        // 2. Client Spawning logic
-        if (gameState === 'PLAYING') {
-            // Difficulty increases with score
-            let spawnRate = Math.max(100, 300 - (score * 5));
-            if (frame % spawnRate === 0 && clients.length < 4) {
-                spawnClient();
-            }
-
-            // Client Patience
-            clients.forEach(c => {
-                c.patience -= 0.05 + (score * 0.001); // Gets harder
-                if (c.patience <= 0) {
-                    globalPatience -= 20; // Big hit
-                    c.dead = true;
-                    spawnFloatingText(c.x, c.y, "😡 LEFT!", "red");
-                }
-            });
-            clients = clients.filter(c => !c.dead);
-
-            // Game Over Check
-            if (globalPatience <= 0) {
-                globalPatience = 0;
-                gameState = 'GAMEOVER';
-                document.getElementById('final-score').innerText = score;
-                document.getElementById('game-over-screen').classList.remove('hidden');
-            }
-            document.getElementById('lives').innerText = Math.floor(globalPatience) + "%";
-            document.getElementById('score').innerText = score;
+        // Interaction
+        if (keys.space && !spaceLocked) {
+            checkInteractions();
+            spaceLocked = true;
         }
 
-        // 3. Interactions
-        checkInteractions();
+        // Clients
+        updateClients();
     }
 
     function spawnClient() {
-        // Pick a random task
-        const randomTask = TASKS[Math.floor(Math.random() * TASKS.length)];
-        
-        // Clients line up at the bottom "reception" area
+        if (clients.length >= 4) return;
+
+        const task = TASKS[Math.floor(Math.random() * TASKS.length)];
         clients.push({
-            x: 100 + (clients.length * 150),
-            y: CANVAS_HEIGHT - 80,
-            w: 50, h: 80,
-            task: randomTask,
+            x: 100 + (clients.length * 180),
+            y: 570,
+            w: 50, h: 70,
+            task: task,
             patience: 100,
-            color: `hsl(${Math.random()*360}, 60%, 70%)` // Random shirt color
+            maxPatience: 100,
+            id: Date.now() + Math.random()
         });
+    }
+
+    function updateClients() {
+        // Spawn Logic
+        let spawnRate = Math.max(60, 200 - (state.level * 20)); // Faster per level
+        if (state.frame % spawnRate === 0) spawnClient();
+
+        clients.forEach((c, idx) => {
+            // Patience Decay
+            let decay = 0.1 + (state.level * 0.05); // Faster decay per level
+            c.patience -= decay;
+
+            if (c.patience <= 0) {
+                // Client leaves angry
+                clients.splice(idx, 1);
+                state.patience -= 15; // Global health hit
+                spawnParticle(c.x, c.y, "😡", "red");
+                checkGameOver();
+            }
+        });
+
+        updateHUD();
     }
 
     function checkInteractions() {
-        const dist = 60; // Interaction radius
-        let nearSomething = false;
-
-        // Check Cabinets
-        cabinets.forEach(cab => {
-            if (getDistance(player, cab) < dist) {
-                nearSomething = true;
-                if (keys['space'] && !spaceLocked && !player.holding) {
-                    // Grab item
-                    player.holding = cab.task;
-                    spaceLocked = true;
-                    spawnFloatingText(player.x, player.y, "Got " + cab.task.name + "!", "#fff");
-                }
+        // 1. Check Cabinets (Pickup/Swap)
+        for (let cab of cabinets) {
+            if (dist(player, cab) < 80) {
+                player.holding = cab.task;
+                spawnParticle(player.x, player.y - 50, "📂", "white");
+                return;
             }
-        });
-
-        // Check Clients
-        clients.forEach((cli, index) => {
-            if (getDistance(player, cli) < dist) {
-                nearSomething = true;
-                if (keys['space'] && !spaceLocked && player.holding) {
-                    spaceLocked = true;
-                    if (player.holding.id === cli.task.id) {
-                        // Success!
-                        score += 10;
-                        globalPatience = Math.min(100, globalPatience + 5);
-                        spawnFloatingText(cli.x, cli.y, "THANKS! +10", "#2ecc71");
-                        clients.splice(index, 1);
-                        player.holding = null;
-                    } else {
-                        // Wrong item
-                        spawnFloatingText(cli.x, cli.y, "WRONG FILE!", "red");
-                        globalPatience -= 5;
-                    }
-                }
-            }
-        });
-
-        const prompt = document.getElementById('interaction-prompt');
-        if (nearSomething) prompt.classList.remove('hidden');
-        else prompt.classList.add('hidden');
-    }
-
-    function getDistance(obj1, obj2) {
-        let cx1 = obj1.x + obj1.w/2;
-        let cy1 = obj1.y + obj1.h/2;
-        let cx2 = obj2.x + obj2.w/2;
-        let cy2 = obj2.y + obj2.h/2;
-        return Math.sqrt(Math.pow(cx2-cx1, 2) + Math.pow(cy2-cy1, 2));
-    }
-
-    function spawnFloatingText(x, y, text, color) {
-        particles.push({x, y, text, color, life: 60});
-    }
-
-    // --- DRAWING ---
-    function draw() {
-        // Clear
-        ctx.fillStyle = "#7f8c8d";
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-        // Draw Floor Grid
-        ctx.strokeStyle = "rgba(0,0,0,0.1)";
-        ctx.lineWidth = 2;
-        for(let i=0; i<CANVAS_WIDTH; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,CANVAS_HEIGHT); ctx.stroke(); }
-        for(let i=0; i<CANVAS_HEIGHT; i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(CANVAS_WIDTH,i); ctx.stroke(); }
-
-        // Draw Walls (Top area)
-        ctx.fillStyle = "#34495e";
-        ctx.fillRect(0, 0, CANVAS_WIDTH, 50);
-
-        // Draw Cabinets
-        cabinets.forEach(cab => {
-            // Cabinet Body
-            ctx.fillStyle = cab.task.color;
-            ctx.fillRect(cab.x, cab.y, cab.w, cab.h);
-            
-            // Details (Drawers)
-            ctx.fillStyle = "rgba(0,0,0,0.2)";
-            ctx.fillRect(cab.x + 10, cab.y + 10, cab.w - 20, 20); // Drawer 1
-            ctx.fillRect(cab.x + 10, cab.y + 40, cab.w - 20, 20); // Drawer 2
-            ctx.fillRect(cab.x + 10, cab.y + 70, cab.w - 20, 20); // Drawer 3
-
-            // If in Memory Phase, show the icon/label
-            if (gameState === 'MEMORIZE') {
-                ctx.fillStyle = "white";
-                ctx.font = "30px Arial";
-                ctx.fillText(cab.task.icon, cab.x + 25, cab.y - 10);
-                
-                ctx.font = "14px Arial";
-                ctx.fillStyle = "white";
-                ctx.textAlign = "center";
-                ctx.fillText(cab.task.name, cab.x + cab.w/2, cab.y + cab.h + 20);
-            }
-        });
-
-        // Draw Reception Desk Area (Bottom)
-        ctx.fillStyle = "#bdc3c7";
-        ctx.fillRect(0, CANVAS_HEIGHT - 100, CANVAS_WIDTH, 10); // Countertop
-
-        // Draw Clients
-        clients.forEach(c => {
-            // Bobbing animation
-            let bob = Math.sin(frame * 0.1) * 3;
-            
-            // Body
-            ctx.fillStyle = c.color;
-            ctx.fillRect(c.x, c.y + bob, c.w, c.h);
-            
-            // Head
-            ctx.fillStyle = "#ffccaa";
-            ctx.fillRect(c.x + 10, c.y - 30 + bob, 30, 30);
-            
-            // Thought Bubble
-            ctx.fillStyle = "white";
-            ctx.beginPath();
-            ctx.ellipse(c.x + 25, c.y - 60 + bob, 30, 20, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#333";
-            ctx.stroke();
-            
-            // Icon in bubble
-            ctx.fillStyle = "black";
-            ctx.font = "20px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(c.task.icon, c.x + 25, c.y - 53 + bob);
-
-            // Patience Bar
-            ctx.fillStyle = "red";
-            ctx.fillRect(c.x, c.y + c.h + 10, c.w, 5);
-            ctx.fillStyle = "#2ecc71";
-            ctx.fillRect(c.x, c.y + c.h + 10, c.w * (c.patience / 100), 5);
-        });
-
-        // Draw Player
-        let pBob = Math.sin(player.frame) * 5;
-        
-        // Shadow
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.beginPath();
-        ctx.ellipse(player.x + player.w/2, player.y + player.h - 5, 15, 5, 0, 0, Math.PI*2);
-        ctx.fill();
-
-        // Body
-        ctx.fillStyle = "#333"; // Suit
-        ctx.fillRect(player.x, player.y + pBob, player.w, player.h);
-        
-        // Head
-        ctx.fillStyle = "#ffccaa";
-        ctx.fillRect(player.x + 5, player.y - 25 + pBob, 30, 25);
-
-        // Holding Item?
-        if (player.holding) {
-            ctx.fillStyle = player.holding.color;
-            ctx.fillRect(player.x + 10, player.y - 45 + pBob, 20, 25); // File folder
-            ctx.fillStyle = "white";
-            ctx.font = "14px Arial";
-            ctx.fillText(player.holding.icon, player.x + 20, player.y - 35 + pBob);
         }
 
-        // Particles
+        // 2. Check Trash (Drop)
+        if (dist(player, trashBin) < 60) {
+            if (player.holding) {
+                player.holding = null;
+                spawnParticle(trashBin.x, trashBin.y - 50, "🗑️", "gray");
+            }
+            return;
+        }
+
+        // 3. Check Clients (Deliver)
+        for (let i = 0; i < clients.length; i++) {
+            let c = clients[i];
+            if (dist(player, c) < 80) {
+                if (player.holding && player.holding.id === c.task.id) {
+                    // Success
+                    clients.splice(i, 1);
+                    player.holding = null;
+                    state.score++;
+                    state.patience = Math.min(100, state.patience + 5);
+                    spawnParticle(c.x, c.y - 50, "✅", "green");
+                    
+                    checkLevelWin();
+                    return;
+                } else if (player.holding) {
+                    // Wrong item
+                    spawnParticle(c.x, c.y - 50, "⛔", "red");
+                    state.patience -= 5;
+                }
+            }
+        }
+    }
+
+    function checkLevelWin() {
+        if (state.score >= state.goal) {
+            state.phase = 'LEVEL_DONE';
+            document.getElementById('level-screen').classList.remove('hidden');
+        }
+    }
+
+    function checkGameOver() {
+        if (state.patience <= 0) {
+            state.phase = 'GAMEOVER';
+            document.getElementById('final-level').innerText = state.level;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+        }
+    }
+
+    function updateHUD() {
+        document.getElementById('level-display').innerText = state.level;
+        document.getElementById('served-display').innerText = state.score;
+        document.getElementById('goal-display').innerText = state.goal;
+        document.getElementById('lives-display').innerText = Math.floor(state.patience) + "%";
+        document.getElementById('lives-display').style.color = state.patience < 30 ? 'red' : 'black';
+    }
+
+    function dist(o1, o2) {
+        let x1 = o1.x + o1.w/2, y1 = o1.y + o1.h/2;
+        let x2 = o2.x + o2.w/2, y2 = o2.y + o2.h/2;
+        return Math.hypot(x2 - x1, y2 - y1);
+    }
+
+    function spawnParticle(x, y, txt, col) {
+        particles.push({x, y, txt, col, life: 40});
+    }
+
+    // --- DRAWING ENGINE (OVERSIMPLIFIED STYLE) ---
+    function draw() {
+        ctx.clearRect(0, 0, 900, 650);
+
+        // 1. Draw Floor
+        ctx.fillStyle = "#f4f4f4"; // Light grey floor
+        ctx.fillRect(0, 150, 900, 500);
+        
+        // Grid lines
+        ctx.strokeStyle = "#ddd";
+        ctx.lineWidth = 2;
+        for(let i=0; i<900; i+=60) strokeLine(i, 150, i, 650);
+        for(let i=150; i<650; i+=60) strokeLine(0, i, 900, i);
+
+        // 2. Draw Back Wall
+        ctx.fillStyle = "#bdc3c7";
+        ctx.fillRect(0, 0, 900, 150);
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 4;
+        strokeLine(0, 150, 900, 150);
+
+        // 3. Draw Cabinets
+        cabinets.forEach(drawCabinet);
+
+        // 4. Draw Trash Bin
+        drawTrash(trashBin);
+
+        // 5. Draw Clients
+        clients.forEach(drawClient);
+
+        // 6. Draw Player
+        drawPlayer(player);
+
+        // 7. Draw Reception Desk
+        ctx.fillStyle = "#95a5a6";
+        ctx.beginPath();
+        ctx.rect(0, 550, 900, 100);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 8. Particles
         particles.forEach((p, i) => {
-            ctx.fillStyle = p.color;
-            ctx.font = "bold 20px Arial";
-            ctx.fillText(p.text, p.x, p.y);
+            ctx.fillStyle = p.col;
+            ctx.font = "30px Arial";
+            ctx.fillText(p.txt, p.x, p.y);
             p.y -= 1;
             p.life--;
-            if(p.life <= 0) particles.splice(i, 1);
+            if (p.life<=0) particles.splice(i, 1);
         });
     }
+
+    function strokeLine(x1, y1, x2, y2) {
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+
+    function drawRect(x, y, w, h, fill) {
+        ctx.fillStyle = fill;
+        ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill();
+        ctx.strokeStyle = "black"; ctx.lineWidth = 3; ctx.stroke();
+    }
+
+    function drawCircle(x, y, r, fill) {
+        ctx.fillStyle = fill;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "black"; ctx.lineWidth = 3; ctx.stroke();
+    }
+
+    function drawCabinet(c) {
+        // Body
+        drawRect(c.x, c.y, c.w, c.h, state.phase === 'MEMORIZE' ? c.task.color : '#bdc3c7'); // Grey if hidden
+        
+        // Drawers
+        ctx.lineWidth = 2;
+        ctx.strokeRect(c.x+10, c.y+10, c.w-20, 20);
+        ctx.strokeRect(c.x+10, c.y+40, c.w-20, 20);
+        
+        // Icon (Only if memorizing)
+        if (state.phase === 'MEMORIZE') {
+            ctx.fillStyle = "black";
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(c.task.icon, c.x + c.w/2, c.y + 85);
+        }
+    }
+
+    function drawTrash(t) {
+        drawRect(t.x, t.y, t.w, t.h, "#7f8c8d");
+        // Stripes
+        ctx.strokeStyle = "black"; ctx.lineWidth = 2;
+        strokeLine(t.x+10, t.y+10, t.x+10, t.y+t.h-10);
+        strokeLine(t.x+25, t.y+10, t.x+25, t.y+t.h-10);
+        strokeLine(t.x+40, t.y+10, t.x+40, t.y+t.h-10);
+        ctx.fillStyle = "black";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("TRASH", t.x+7, t.y-10);
+    }
+
+    function drawClient(c) {
+        // Bobbing
+        let bob = Math.sin(state.frame * 0.1) * 3;
+        
+        // Body
+        drawRect(c.x, c.y + 30 + bob, c.w, 40, "#e74c3c"); // Red shirt
+        
+        // Head
+        drawCircle(c.x + c.w/2, c.y + 10 + bob, 25, "#ffeaa7");
+        
+        // Eyes (Dots)
+        ctx.fillStyle = "black";
+        ctx.beginPath(); ctx.arc(c.x + 15, c.y + 10 + bob, 2, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(c.x + 35, c.y + 10 + bob, 2, 0, Math.PI*2); ctx.fill();
+
+        // Bubble
+        ctx.fillStyle = "white";
+        ctx.beginPath(); ctx.ellipse(c.x + 60, c.y - 20 + bob, 35, 25, 0, 0, Math.PI*2); ctx.fill();
+        ctx.stroke();
+        
+        // Icon
+        ctx.fillStyle = "black";
+        ctx.font = "24px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(c.task.icon, c.x + 60, c.y - 12 + bob);
+
+        // Patience
+        ctx.fillStyle = "#ecf0f1";
+        ctx.fillRect(c.x - 10, c.y + 80, 70, 8);
+        ctx.fillStyle = c.patience < 30 ? "red" : "#2ecc71";
+        ctx.fillRect(c.x - 10, c.y + 80, 70 * (c.patience/100), 8);
+        ctx.strokeRect(c.x - 10, c.y + 80, 70, 8);
+    }
+
+    function drawPlayer(p) {
+        let bob = Math.sin(p.frame) * 4;
+        
+        // Body
+        drawRect(p.x, p.y + 25 + bob, p.w, 35, "#2c3e50"); // Suit
+        
+        // Head
+        drawCircle(p.x + p.w/2, p.y + 5 + bob, 20, "#ffeaa7");
+        
+        // Eyes
+        ctx.fillStyle = "black";
+        let eyeOffset = p.faceDir * 5;
+        ctx.beginPath(); ctx.arc(p.x + p.w/2 + eyeOffset - 5, p.y + 5 + bob, 2, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x + p.w/2 + eyeOffset + 5, p.y + 5 + bob, 2, 0, Math.PI*2); ctx.fill();
+
+        // Holding
+        if (p.holding) {
+            ctx.fillStyle = p.holding.color;
+            ctx.beginPath(); 
+            ctx.rect(p.x + 10 + (p.faceDir*20), p.y + 20 + bob, 20, 25); 
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = "white";
+            ctx.font = "14px Arial";
+            ctx.fillText(p.holding.icon, p.x + 20 + (p.faceDir*20), p.y + 38 + bob);
+        }
+    }
+
+    init();
 
 </script>
 </body>
