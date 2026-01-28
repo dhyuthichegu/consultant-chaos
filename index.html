@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Consultant's Trap</title>
+    <title>The Consultant's Trap: Office Edition</title>
     <style>
         :root {
             --bg-color: #f0f0f0;
-            --game-bg: #2c3e50;
+            --game-bg: #ecf0f1; /* Office Floor */
             --text-color: #333;
             --accent: #e74c3c;
-            --success: #27ae60;
-            --card-bg: #ecf0f1;
+            --highlight: #f1c40f;
         }
         
         body {
-            font-family: 'Courier New', Courier, monospace; /* Retro terminal vibe */
+            font-family: 'Courier New', Courier, monospace;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -26,367 +25,387 @@
             min-height: 100vh;
         }
 
-        h1 {
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
+        h1 { margin-bottom: 5px; text-transform: uppercase; }
+        .subtitle { font-style: italic; margin-bottom: 20px; color: #555; }
 
-        p.subtitle {
-            max-width: 600px;
-            text-align: center;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-
-        #game-container {
+        #game-wrapper {
             position: relative;
-            width: 600px;
-            height: 400px;
-            background-color: var(--game-bg);
-            border: 4px solid #34495e;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 4px solid #2c3e50;
             border-radius: 8px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
 
-        #ui-layer {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            color: white;
-            font-weight: bold;
-            font-size: 18px;
-            z-index: 10;
+        canvas {
+            background-color: var(--game-bg);
+            display: block;
         }
 
-        #player {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 40px;
-            transition: left 0.1s;
-        }
-
-        .client-request {
-            position: absolute;
-            background-color: var(--card-bg);
-            padding: 10px;
-            border-radius: 4px;
-            border: 2px solid #bdc3c7;
-            text-align: center;
-            width: 120px;
-            font-weight: bold;
-            font-size: 14px;
-            box-shadow: 0 4px 0 #95a5a6;
-        }
-
-        #controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 20px;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            font-family: inherit;
-            font-weight: bold;
-            font-size: 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-
-        .btn:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
-
-        .btn-ppt { background-color: #e67e22; color: white; }
-        .btn-xls { background-color: #27ae60; color: white; }
-        .btn-mail { background-color: #3498db; color: white; }
-
-        #start-screen, #game-over-screen {
+        /* UI Overlays */
+        #start-screen, #game-over-screen, #level-up-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             color: white;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 20;
+            z-index: 10;
             text-align: center;
-        }
-
-        #start-screen button, #game-over-screen button {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 20px;
-            cursor: pointer;
-            margin-top: 20px;
-            font-family: inherit;
-            border-radius: 4px;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .hidden { display: none !important; }
 
-        /* Bibliography Section */
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 20px;
+            border-radius: 4px;
+            transition: transform 0.1s;
+        }
+        button:hover { transform: scale(1.05); }
+
+        .key {
+            display: inline-block;
+            background: #333;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-family: monospace;
+            margin: 0 2px;
+        }
+
+        /* Bibliography */
         #bibliography {
-            margin-top: 50px;
+            margin-top: 40px;
             max-width: 800px;
             background: white;
-            padding: 40px;
-            border: 1px solid #ddd;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 30px;
+            border: 1px solid #ccc;
         }
-
-        #bibliography h2 {
-            font-size: 20px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .citation {
-            margin-bottom: 15px;
-            padding-left: 20px;
-            text-indent: -20px;
-            line-height: 1.6;
-        }
-
-        @media (max-width: 650px) {
-            #game-container { width: 100%; height: 350px; }
-            .btn { padding: 10px 15px; font-size: 12px; }
-            #controls { gap: 10px; }
-        }
+        .citation { margin-bottom: 10px; padding-left: 20px; text-indent: -20px; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <h1>The Consultant's Trap</h1>
-    <p class="subtitle">"It's just for two years," you say. But the requests keep coming.</p>
+    <div class="subtitle">Run around. Please the client. Never leave.</div>
 
-    <div id="game-container">
-        <div id="ui-layer">
-            <div>PRESTIGE: <span id="score">0</span></div>
-            <div>BURNOUT: <span id="burnout">0%</span></div>
-        </div>
-
-        <div id="player">🧑‍💼</div>
-
-        <!-- Screens -->
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <!-- Start / How to Play Screen -->
         <div id="start-screen">
-            <h2>Welcome to the Pipeline</h2>
-            <p style="padding: 0 20px;">Clients will demand deliverables.<br>Give them what they want before you burn out.</p>
-            <p><strong>INSTRUCTIONS:</strong></p>
-            <ul style="text-align: left; list-style: none;">
-                <li>"Fix Fonts" / "Make Pretty" ➔ <strong>DECK</strong> (Press 1)</li>
-                <li>"Run Numbers" / "Model" ➔ <strong>EXCEL</strong> (Press 2)</li>
-                <li>"Schedule" / "Update" ➔ <strong>EMAIL</strong> (Press 3)</li>
-            </ul>
-            <button onclick="startGame()">Accept Offer</button>
+            <h2 style="color: var(--highlight);">HOW TO PLAY</h2>
+            <p>You are a Junior Consultant in a busy office.</p>
+            <p>1. A <strong>CLIENT</strong> appears at the Front Desk asking for a task.</p>
+            <p>2. Run to the matching station to pick up the work:</p>
+            <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0; text-align: left;">
+                <div>🖨️ <strong>Printer</strong> = DECK</div>
+                <div>🖥️ <strong>Server</strong> = EXCEL</div>
+                <div>☕ <strong>Coffee</strong> = EMAIL</div>
+            </div>
+            <p>3. Bring it back to the client before they get angry and leave!</p>
+            <p><strong>CONTROLS:</strong> Use <span class="key">Arrow Keys</span> to move.</p>
+            <button onclick="startGame()">START INTERNSHIP</button>
         </div>
 
+        <!-- Level Up Screen -->
+        <div id="level-up-screen" class="hidden">
+            <h2 style="color: #2ecc71;">PROMOTED!</h2>
+            <p>You survived another cycle.</p>
+            <p>Current Title: <span id="new-title">Associate</span></p>
+            <p><em>"The reward for good work is more work."</em></p>
+            <button onclick="nextLevel()">START NEXT YEAR</button>
+        </div>
+
+        <!-- Game Over Screen -->
         <div id="game-over-screen" class="hidden">
-            <h2>YOU BURNED OUT</h2>
-            <p>But hey, nice exit opportunities?</p>
-            <p>Final Prestige: <span id="final-score">0</span></p>
-            <button onclick="location.reload()">Re-apply (Try Again)</button>
+            <h2 style="color: var(--accent);">FIRED (or Burned Out)</h2>
+            <p>You let too many clients down.</p>
+            <p>Final Level: <span id="final-level">1</span></p>
+            <p>Score: <span id="final-score">0</span></p>
+            <button onclick="location.reload()">RE-APPLY</button>
         </div>
-    </div>
-
-    <div id="controls">
-        <button class="btn btn-ppt" onclick="handleInput('deck')">1. DECK 📊</button>
-        <button class="btn btn-xls" onclick="handleInput('excel')">2. EXCEL 📈</button>
-        <button class="btn btn-mail" onclick="handleInput('email')">3. EMAIL 📧</button>
     </div>
 
     <div id="bibliography">
-        <h2>Works Cited</h2>
-        <div class="citation">Empson, Laura. "If You're So Successful, Why Are You Still Working 70 Hours a Week?" <em>Harvard Business Review</em>, May-June 2017. hbr.org/2017/05/if-youre-so-successful-why-are-you-still-working-70-hours-a-week.</div>
+        <h3>Works Cited</h3>
+        <div class="citation">Empson, Laura. "If You're So Successful, Why Are You Still Working 70 Hours a Week?" <em>Harvard Business Review</em>, 2017.</div>
         <div class="citation">Graeber, David. <em>Bullshit Jobs: A Theory</em>. Simon & Schuster, 2018.</div>
-        <div class="citation">Housel, Morgan. <em>The Psychology of Money: Timeless Lessons on Wealth, Greed, and Happiness</em>. Harriman House, 2020.</div>
-        <div class="citation">"An Insecure Overachiever? Let's Break Free." <em>Ivy Exec</em>, ivyexec.com/career-advice/2021/3-signs-you-might-be-an-insecure-overachiever-and-how-to-break-free/.</div>
-        <div class="citation">Sims, Peter. "Elite Universities Are Breeding Grounds for Insecure Overachievers." <em>Forge, Medium</em>, 27 Nov. 2019, forge.medium.com/what-is-success-43f9402ca3f2.</div>
-        <div class="citation">"'The Bermuda Triangle of Talent': 27-year-old Oxford grad turned down McKinsey and Morgan Stanley to find out why Gen Z's smartest keep selling out." <em>Fortune</em>, 26 Oct. 2025, fortune.com/2025/10/26/gen-z-college-selling-out-elite-universities-2025-admissions-mckinsey-harvard-oxford/.</div>
+        <div class="citation">Housel, Morgan. <em>The Psychology of Money</em>. Harriman House, 2020.</div>
         <div class="citation">Van Teutem, Simon. <em>De bermudadriehoek van talent</em>. De Correspondent, 2024.</div>
     </div>
 
-    <script>
-        // Game State
-        let isPlaying = false;
-        let score = 0;
-        let burnout = 0;
-        let gameSpeed = 2000; // ms between spawns
-        let gameLoop;
-        let spawnLoop;
-        const requests = [];
+<script>
+    // --- SETUP ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Game State
+    let gameState = 'START'; // START, PLAYING, LEVEL_UP, GAME_OVER
+    let level = 1;
+    let score = 0;
+    let lives = 3;
+    let clientTimer = 0;
+    
+    // Difficulty Settings
+    const titles = ["Intern", "Analyst", "Associate", "Manager", "Senior Manager", "Partner", "CEO?"];
+    let clientSpawnRate = 300; // Frames until next client
+    let clientPatience = 600;  // Frames a client waits
 
-        // Configurations
-        const TYPES = {
-            deck: { label: "DECK", color: "#e67e22", triggers: ["Fix Fonts", "Make Pretty", "One Slider", "PDF This"] },
-            excel: { label: "EXCEL", color: "#27ae60", triggers: ["Run Numbers", "The Model", "Q3 Projections", "Data Dump"] },
-            email: { label: "EMAIL", color: "#3498db", triggers: ["Schedule It", "Pls Fix", "Circle Back", "Update?"] }
-        };
+    // Entities
+    const player = { x: 400, y: 300, w: 30, h: 30, speed: 5, color: '#333', holding: null };
+    const stations = [
+        { id: 'deck', name: 'DECK', icon: '📊', x: 50, y: 50, w: 60, h: 60, color: '#e67e22' },   // Top Left
+        { id: 'excel', name: 'EXCEL', icon: '📉', x: 690, y: 50, w: 60, h: 60, color: '#27ae60' }, // Top Right
+        { id: 'email', name: 'EMAIL', icon: '📧', x: 690, y: 490, w: 60, h: 60, color: '#3498db' } // Bottom Right
+    ];
+    const desk = { x: 350, y: 500, w: 100, h: 80, color: '#95a5a6' }; // Bottom Center (Reception)
 
-        const keys = Object.keys(TYPES);
+    let clients = []; // Array of active clients
+    let particles = []; // For effects
 
-        function startGame() {
-            document.getElementById('start-screen').classList.add('hidden');
-            isPlaying = true;
-            score = 0;
-            burnout = 0;
-            updateUI();
-            
-            // Start Loops
-            spawnRequest();
-            gameLoop = setInterval(updateGame, 50);
+    // Input Handling
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
+
+    // --- GAME LOOP ---
+    function startGame() {
+        document.getElementById('start-screen').classList.add('hidden');
+        resetGame();
+        gameState = 'PLAYING';
+        gameLoop();
+    }
+
+    function resetGame() {
+        level = 1;
+        score = 0;
+        lives = 3;
+        player.x = 400; player.y = 300; player.holding = null;
+        clients = [];
+        updateDifficulty();
+    }
+
+    function nextLevel() {
+        document.getElementById('level-up-screen').classList.add('hidden');
+        level++;
+        player.x = 400; player.y = 300; player.holding = null;
+        clients = [];
+        updateDifficulty();
+        gameState = 'PLAYING';
+        gameLoop();
+    }
+
+    function updateDifficulty() {
+        // As level increases, clients appear faster and wait less time
+        clientSpawnRate = Math.max(100, 300 - (level * 30)); 
+        clientPatience = Math.max(200, 600 - (level * 40));
+    }
+
+    function gameLoop() {
+        if (gameState !== 'PLAYING') return;
+
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // --- LOGIC ---
+    function update() {
+        // 1. Move Player
+        if (keys['ArrowUp']) player.y -= player.speed;
+        if (keys['ArrowDown']) player.y += player.speed;
+        if (keys['ArrowLeft']) player.x -= player.speed;
+        if (keys['ArrowRight']) player.x += player.speed;
+
+        // Boundaries
+        player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+        player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
+
+        // 2. Spawn Clients
+        clientTimer++;
+        if (clientTimer > clientSpawnRate) {
+            spawnClient();
+            clientTimer = 0;
         }
 
-        function spawnRequest() {
-            if (!isPlaying) return;
-
-            const typeKey = keys[Math.floor(Math.random() * keys.length)];
-            const typeData = TYPES[typeKey];
-            const text = typeData.triggers[Math.floor(Math.random() * typeData.triggers.length)];
+        // 3. Client Logic
+        for (let i = clients.length - 1; i >= 0; i--) {
+            let c = clients[i];
+            c.timer--;
             
-            // Random horizontal position (keep within bounds)
-            const xPos = 20 + Math.random() * 500; // container is 600px wide
-
-            const req = document.createElement('div');
-            req.className = 'client-request';
-            req.innerText = text;
-            req.style.left = xPos + 'px';
-            req.style.top = '-50px'; // Start above visible area
-            req.dataset.type = typeKey;
-
-            document.getElementById('game-container').appendChild(req);
-            requests.push({ el: req, y: -50, speed: 1 + (score / 10) }); // Speed increases with score
-
-            // Schedule next spawn (gets faster)
-            const nextSpawn = Math.max(500, 2000 - (score * 50));
-            setTimeout(spawnRequest, nextSpawn);
+            // Timeout -> Lose Life
+            if (c.timer <= 0) {
+                clients.splice(i, 1);
+                lives--;
+                spawnParticle(c.x, c.y, '❌');
+                if (lives <= 0) triggerGameOver();
+            }
         }
 
-        function updateGame() {
-            if (!isPlaying) return;
+        // 4. Interactions
+        checkCollisions();
+    }
 
-            // Move requests
-            for (let i = requests.length - 1; i >= 0; i--) {
-                const r = requests[i];
-                r.y += r.speed;
-                r.el.style.top = r.y + 'px';
+    function spawnClient() {
+        if (clients.length >= 3) return; // Max 3 clients at a time
+        
+        const tasks = ['deck', 'excel', 'email'];
+        const task = tasks[Math.floor(Math.random() * tasks.length)];
+        
+        clients.push({
+            x: desk.x + 10 + (clients.length * 30), // Line them up
+            y: desk.y - 40,
+            w: 30, h: 30,
+            task: task,
+            timer: clientPatience,
+            maxTimer: clientPatience
+        });
+    }
 
-                // Hit bottom (Missed deadline)
-                if (r.y > 350) {
-                    failRequest(i);
+    function checkCollisions() {
+        // Station Collision (Pick up item)
+        if (!player.holding) {
+            stations.forEach(s => {
+                if (rectIntersect(player.x, player.y, player.w, player.h, s.x, s.y, s.w, s.h)) {
+                    player.holding = s.id;
+                    spawnParticle(player.x, player.y, '✨');
+                }
+            });
+        }
+
+        // Desk Collision (Deliver item)
+        if (player.holding && rectIntersect(player.x, player.y, player.w, player.h, desk.x, desk.y, desk.w, desk.h)) {
+            // Find a client who needs this
+            let served = false;
+            for (let i = 0; i < clients.length; i++) {
+                if (clients[i].task === player.holding) {
+                    clients.splice(i, 1); // Remove client
+                    score += 10;
+                    player.holding = null;
+                    served = true;
+                    spawnParticle(desk.x + 50, desk.y, '✅');
+                    checkLevelProgress();
+                    break;
                 }
             }
         }
+    }
 
-        function handleInput(inputType) {
-            if (!isPlaying) return;
-
-            // Find the lowest request that matches
-            // We look for the "most urgent" one (highest Y value)
-            let targetIndex = -1;
-            let maxY = -100;
-
-            for (let i = 0; i < requests.length; i++) {
-                if (requests[i].y > maxY) {
-                    maxY = requests[i].y;
-                    targetIndex = i;
-                }
-            }
-
-            if (targetIndex !== -1) {
-                const target = requests[targetIndex];
-                if (target.el.dataset.type === inputType) {
-                    // Success
-                    succeedRequest(targetIndex);
-                } else {
-                    // Wrong deliverable sent
-                    flashScreen('red');
-                    burnout += 10;
-                    checkGameOver();
-                }
-            }
-            updateUI();
+    function checkLevelProgress() {
+        // Level up every 500 points (approx 5 clients)
+        if (score > 0 && score % 50 === 0) {
+            gameState = 'LEVEL_UP';
+            document.getElementById('new-title').innerText = titles[Math.min(level, titles.length - 1)];
+            document.getElementById('level-up-screen').classList.remove('hidden');
         }
+    }
 
-        function succeedRequest(index) {
-            const r = requests[index];
-            r.el.remove();
-            requests.splice(index, 1);
-            score++;
-            
-            // Move player visually to match where the request was
-            const player = document.getElementById('player');
-            player.style.left = r.el.style.left;
+    function triggerGameOver() {
+        gameState = 'GAME_OVER';
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('final-level').innerText = level;
+        document.getElementById('game-over-screen').classList.remove('hidden');
+    }
 
-            updateUI();
-        }
+    function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+        return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1;
+    }
 
-        function failRequest(index) {
-            const r = requests[index];
-            r.el.style.backgroundColor = 'red';
-            setTimeout(() => r.el.remove(), 200);
-            requests.splice(index, 1);
-            
-            burnout += 20; // Big penalty for missing deadline
-            checkGameOver();
-            updateUI();
-        }
+    function spawnParticle(x, y, char) {
+        particles.push({x, y, char, life: 30});
+    }
 
-        function checkGameOver() {
-            if (burnout >= 100) {
-                burnout = 100;
-                isPlaying = false;
-                clearInterval(gameLoop);
-                document.getElementById('final-score').innerText = score;
-                document.getElementById('game-over-screen').classList.remove('hidden');
-            }
-        }
+    // --- DRAWING ---
+    function draw() {
+        // Clear Background
+        ctx.fillStyle = '#ecf0f1';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        function updateUI() {
-            document.getElementById('score').innerText = score;
-            document.getElementById('burnout').innerText = burnout + '%';
-            document.getElementById('burnout').style.color = burnout > 70 ? 'red' : 'white';
-        }
+        // Draw Desk (Reception)
+        ctx.fillStyle = desk.color;
+        ctx.fillRect(desk.x, desk.y, desk.w, desk.h);
+        ctx.fillStyle = '#7f8c8d';
+        ctx.font = "16px monospace";
+        ctx.fillText("CLIENTS", desk.x + 15, desk.y + 45);
 
-        function flashScreen(color) {
-            const container = document.getElementById('game-container');
-            container.style.borderColor = color;
-            setTimeout(() => {
-                container.style.borderColor = '#34495e';
-            }, 100);
-        }
-
-        // Keyboard Controls
-        document.addEventListener('keydown', (e) => {
-            if (e.key === '1') handleInput('deck');
-            if (e.key === '2') handleInput('excel');
-            if (e.key === '3') handleInput('email');
+        // Draw Stations
+        stations.forEach(s => {
+            ctx.fillStyle = s.color;
+            ctx.fillRect(s.x, s.y, s.w, s.h);
+            ctx.fillStyle = 'white';
+            ctx.font = "30px Arial";
+            ctx.fillText(s.icon, s.x + 15, s.y + 40);
+            ctx.fillStyle = '#333';
+            ctx.font = "12px monospace";
+            ctx.fillText(s.name, s.x, s.y - 10);
         });
 
-    </script>
+        // Draw Player
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+        // Draw Held Item
+        if (player.holding) {
+            ctx.fillStyle = 'black';
+            ctx.font = "20px Arial";
+            const icon = stations.find(s => s.id === player.holding).icon;
+            ctx.fillText(icon, player.x + 5, player.y - 10);
+        }
+
+        // Draw Clients
+        clients.forEach(c => {
+            // Body
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(c.x, c.y, c.w, c.h);
+            
+            // Request Bubble
+            ctx.fillStyle = 'white';
+            ctx.fillRect(c.x - 10, c.y - 40, 50, 30);
+            ctx.strokeRect(c.x - 10, c.y - 40, 50, 30);
+            
+            // Icon in bubble
+            const icon = stations.find(s => s.id === c.task).icon;
+            ctx.fillStyle = 'black';
+            ctx.font = "20px Arial";
+            ctx.fillText(icon, c.x + 5, c.y - 18);
+
+            // Patience Bar
+            const pct = c.timer / c.maxTimer;
+            ctx.fillStyle = pct < 0.3 ? 'red' : 'green';
+            ctx.fillRect(c.x, c.y - 5, c.w * pct, 4);
+        });
+
+        // Draw Particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            ctx.font = "20px Arial";
+            ctx.fillText(p.char, p.x, p.y);
+            p.y--;
+            p.life--;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        // HUD
+        ctx.fillStyle = '#333';
+        ctx.font = "20px monospace";
+        ctx.fillText("SCORE: " + score, 20, 30);
+        ctx.fillText("LEVEL: " + level, 20, 55);
+        ctx.fillText("LIVES: " + "❤️".repeat(lives), 20, 80);
+    }
+</script>
 </body>
 </html>
