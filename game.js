@@ -177,6 +177,15 @@ const Game = {
 
     nextLevel: function() {
         AUDIO.rooster();
+        
+        // Randomize Victory GIF
+        const gifs = ['win-office.gif', 'win-wolf.gif', 'win-spongebob.gif'];
+        const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+        
+        // Find the img tag in the level screen (it's the only one there)
+        const img = document.querySelector('#level-screen img');
+        if(img) img.src = `images/${randomGif}`;
+
         this.state.level++;
         this.startPhase('PLAYING'); 
     },
