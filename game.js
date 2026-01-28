@@ -162,8 +162,9 @@ const Game = {
 
     skipMemory: function() {
         if(this.state.phase === 'MEMORIZE') {
-            clearInterval(this.tInt);
-            this.startPhase('PLAYING');
+            clearInterval(this.tInt); // Stop the countdown
+            document.getElementById('timer-big').innerText = "0"; // Visual feedback
+            this.startPhase('PLAYING'); // Start game
         }
     },
 
