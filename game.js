@@ -104,15 +104,19 @@ const Game = {
         requestAnimationFrame(this.loop);
         
         this.keys = {};
+        
+        // Input Handling & Scroll Blocking
         window.addEventListener('keydown', e => {
-            // Prevent scrolling
-            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"," "].includes(e.key) || e.code === "Space") {
+            // 1. Stop Scrolling (Nuclear Option)
+            if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
                 e.preventDefault();
             }
 
+            // 2. Game Input
             this.keys[e.key] = true;
             if(e.code === 'Space') this.keys['Space'] = true;
-        });
+        }, { passive: false }); // Important: passive: false allows preventDefault
+
         window.addEventListener('keyup', e => {
             this.keys[e.key] = false;
             if(e.code === 'Space') { this.keys['Space'] = false; this.lockSpace = false; }
