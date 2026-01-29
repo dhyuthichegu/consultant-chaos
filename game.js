@@ -1,6 +1,6 @@
 /**
- * CONSULTING CHAOS V11.7
- * Final Avatar Restoration: Classic Circle Style + Hair/Gender
+ * CONSULTING CHAOS V11.8
+ * Final Layout & Interaction Fixes + Coffee Steam
  */
 
 // --- CONFIG ---
@@ -52,8 +52,8 @@ const Game = {
     canvas: null, ctx: null,
     state: { phase: 'IDLE', level: 1, score: 0, goal: 2, sanity: 100, frame: 0, highScore: 0 },
     map: [], player: { x: 480, y: 350, w: 30, h: 30, holding: null, frame: 0, stun: 0 },
-    clients: [], projectiles: [], splats: [], particles: [],
-    deskY: 520, trashBin: { x: 880, y: 540, w: 60, h: 80 },
+    clients: [], projectiles: [], splats: [], particles: [], steam: [],
+    deskY: 560, trashBin: { x: 880, y: 580, w: 60, h: 80 },
 
     init: function() {
         this.canvas = document.getElementById('gameCanvas');
@@ -94,7 +94,7 @@ const Game = {
             const cols = this.state.level === 1 ? 3 : 4;
             const w = this.state.level === 1 ? 220 : 180;
             const sx = this.state.level === 1 ? 80 : 60;
-            const sy = 120; // Fixed UI overlap
+            const sy = 100; // Layout fix
 
             for(let r=0; r<2; r++) {
                 for(let c=0; c<cols; c++) {
@@ -110,12 +110,7 @@ const Game = {
                 this.map.forEach(c => lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`);
             }
 
-            if(!document.getElementById('btn-skip')) {
-                const btn = document.createElement('button'); btn.id = 'btn-skip'; btn.className = 'btn';
-                btn.innerText = "SKIP TIMER ⏭️"; btn.style.marginTop = "20px";
-                btn.onclick = () => Game.skipMemory();
-                document.getElementById('memory-overlay').appendChild(btn);
-            }
+            // Removed dynamic button creation to fix duplicate
 
             let t = 20;
             const el = document.getElementById('timer-big');
@@ -249,7 +244,7 @@ const Game = {
             y: this.deskY+40, w:40, h:40,
             task: task, patience: 100, state: 'WAITING', attackTimer: 0, cooldown: 0, frame: 0,
             gender: isMale ? 'MALE' : 'FEMALE',
-            hairColor: ['#634a36', '#2d3436', '#e1b12c'][Math.floor(Math.random()*3)], // Brown, Black, Blonde
+            hairColor: ['#634a36', '#2d3436', '#e1b12c'][Math.floor(Math.random()*3)],
             suitColor: isMale ? ['#2d3436', '#636e72', '#0984e3'][Math.floor(Math.random()*3)] : 
                                 ['#e84393', '#fd79a8', '#6c5ce7'][Math.floor(Math.random()*3)]
         });
@@ -262,6 +257,12 @@ const Game = {
         this.projectiles.push({x:c.x, y:c.y, vx:(dx/d)*s, vy:(dy/d)*s, rot:0});
     },
 
+    spawnSteam: function(x, y) {
+        for(let i=0; i<5; i++) {
+            this.steam.push({x: x + Math.random()*20, y: y, life: 60, vx: (Math.random()-0.5), vy: -1 - Math.random()});
+        }
+    },
+
     interact: function() {
         if(this.player.stun>0) return;
         const p = this.player;
@@ -271,6 +272,7 @@ const Game = {
                 p.holding = c.task;
                 this.particle(p.x, p.y-50, c.task.icon, "black");
                 AUDIO.pickup(c.task.id);
+                if(c.task.id === 'coffee') this.spawnSteam(c.x+50, c.y+40);
                 return;
             }
         }
@@ -334,6 +336,13 @@ const Game = {
         ctx.fillStyle="#57606f"; ctx.fillRect(0, this.deskY, 960, 20);
         ctx.fillStyle="black"; ctx.font="80px Arial"; ctx.fillText("🗑️", this.trashBin.x-20, this.trashBin.y+40);
 
+        this.steam.forEach((s, i) => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${s.life/60})`;
+            ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, Math.PI*2); ctx.fill();
+            s.x += s.vx; s.y += s.vy; s.life--;
+            if(s.life <= 0) this.steam.splice(i, 1);
+        });
+
         this.clients.forEach(c => this.drawClient(c));
         this.projectiles.forEach(p => {
             ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
@@ -357,21 +366,29 @@ const Game = {
 
     drawCubicle: function(c) {
         const ctx = this.ctx;
-        
         ctx.fillStyle = c.task.color; 
         ctx.fillRect(c.x, c.y, c.w, c.h);
         ctx.lineWidth=4; ctx.strokeStyle="black"; ctx.strokeRect(c.x, c.y, c.w, c.h);
 
         if(c.task.id === 'coffee') {
             // COFFEE STATION
-            ctx.fillStyle = "#636e72"; ctx.fillRect(c.x+10, c.y+40, c.w-20, 50); ctx.strokeRect(c.x+10, c.y+40, c.w-20, 50);
-            ctx.fillStyle = "#2d3436"; ctx.fillRect(c.x+30, c.y+10, 40, 50); ctx.strokeRect(c.x+30, c.y+10, 40, 50);
+            ctx.fillStyle = "#b2bec3"; ctx.fillRect(c.x+c.w-40, c.y+10, 30, 80); ctx.strokeRect(c.x+c.w-40, c.y+10, 30, 80); // Fridge
+            ctx.beginPath(); ctx.moveTo(c.x+c.w-35, c.y+40); ctx.lineTo(c.x+c.w-35, c.y+60); ctx.stroke(); // Handle
+
+            ctx.fillStyle = "#636e72"; ctx.fillRect(c.x+10, c.y+40, c.w-60, 50); ctx.strokeRect(c.x+10, c.y+40, c.w-60, 50); // Counter
+            
+            ctx.fillStyle = "#2d3436"; ctx.fillRect(c.x+30, c.y+10, 40, 50); ctx.strokeRect(c.x+30, c.y+10, 40, 50); // Machine
             ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.beginPath(); ctx.arc(c.x+50, c.y+45, 12, 0, Math.PI*2); ctx.fill(); ctx.stroke();
             ctx.fillStyle = "#6F4E37"; ctx.beginPath(); ctx.arc(c.x+50, c.y+50, 8, 0, Math.PI, false); ctx.fill(); 
+            
+            ctx.fillStyle = "white"; // Cups
+            ctx.fillRect(c.x+80, c.y+30, 10, 10); ctx.strokeRect(c.x+80, c.y+30, 10, 10);
+            ctx.fillRect(c.x+95, c.y+30, 10, 10); ctx.strokeRect(c.x+95, c.y+30, 10, 10);
+            
             // Donuts
-            ctx.fillStyle = "white"; ctx.beginPath(); ctx.ellipse(c.x+100, c.y+50, 25, 10, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = "#e84393"; ctx.beginPath(); ctx.arc(c.x+90, c.y+48, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = "#fdcb6e"; ctx.beginPath(); ctx.arc(c.x+110, c.y+48, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.ellipse(c.x+100, c.y+60, 25, 10, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#e84393"; ctx.beginPath(); ctx.arc(c.x+90, c.y+58, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#fdcb6e"; ctx.beginPath(); ctx.arc(c.x+110, c.y+58, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
         } else {
             // STANDARD
             ctx.fillStyle = "#e58e26"; 
@@ -405,13 +422,13 @@ const Game = {
         const ctx = this.ctx;
         const bob = Math.sin(frame)*3;
         
-        // --- LEGS (Classic Stick Style) ---
+        // Legs
         ctx.strokeStyle="black"; ctx.lineWidth=4; ctx.lineCap="round";
         const step = Math.sin(frame*0.8) * 6;
         ctx.beginPath(); ctx.moveTo(x-8, y+20); ctx.lineTo(x-8, y+45+step); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x+8, y+20); ctx.lineTo(x+8, y+45-step); ctx.stroke();
 
-        // --- BODY ---
+        // Body
         if (gender === 'FEMALE') {
             ctx.fillStyle = color;
             ctx.beginPath(); 
@@ -419,46 +436,37 @@ const Game = {
             ctx.lineTo(x+20, y+35+bob); ctx.lineTo(x-20, y+35+bob); // Hem
             ctx.closePath(); ctx.fill(); ctx.stroke();
         } else {
-            // Male = Circle Body
             ctx.fillStyle = color;
             ctx.beginPath(); ctx.arc(x, y+20+bob, 18, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-            
-            // Suit Details
             ctx.fillStyle="white"; ctx.beginPath(); ctx.moveTo(x-6, y+10+bob); ctx.lineTo(x+6, y+10+bob); ctx.lineTo(x, y+25+bob); ctx.fill();
             ctx.strokeStyle = isPlayer ? "red" : "blue"; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(x, y+10+bob); ctx.lineTo(x, y+28+bob); ctx.stroke();
         }
 
-        // --- HEAD (Circle) ---
+        // Head
         ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
         ctx.beginPath(); ctx.arc(x, y+bob, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
 
-        // --- HAIR ---
-        ctx.fillStyle = gender === 'FEMALE' ? "#e1b12c" : "#634a36"; // Blonde vs Brown default
-        // Randomize hair color if client
+        // Hair
+        ctx.fillStyle = gender === 'FEMALE' ? "#e1b12c" : "#634a36"; 
         if(!isPlayer) {
-             // Hash based on x position to keep it consistent per frame
              const hairIndex = Math.floor(x/100) % 3; 
              const hairColors = ['#634a36', '#2d3436', '#e1b12c'];
              ctx.fillStyle = hairColors[hairIndex];
         }
 
         if(gender === 'FEMALE') {
-            // Long Hair
-            ctx.beginPath(); ctx.arc(x, y+bob, 24, Math.PI, 0); // Top
-            ctx.lineTo(x+24, y+25+bob); ctx.lineTo(x-24, y+25+bob); // Sides down
+            ctx.beginPath(); ctx.arc(x, y+bob, 24, Math.PI, 0); 
+            ctx.lineTo(x+24, y+25+bob); ctx.lineTo(x-24, y+25+bob); 
             ctx.fill(); ctx.stroke();
-            // Redraw Face bg over hair center
             ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
             ctx.beginPath(); ctx.arc(x, y+bob, 20, 0, Math.PI*2); ctx.fill(); 
         } else {
-            // Short Hair
             ctx.beginPath(); ctx.arc(x, y+bob-2, 22, Math.PI, 0); ctx.fill(); ctx.stroke();
         }
 
-        // --- FACE ---
+        // Face
         ctx.fillStyle="black"; ctx.strokeStyle="black"; ctx.lineWidth=2;
-        // Eyes
         if(emotion === 'ANGRY') {
             ctx.beginPath(); ctx.moveTo(x-10, y-5+bob); ctx.lineTo(x-2, y+bob); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(x+10, y-5+bob); ctx.lineTo(x+2, y+bob); ctx.stroke();
@@ -466,14 +474,12 @@ const Game = {
         ctx.beginPath(); ctx.arc(x-8, y+bob, 3, 0, Math.PI*2); ctx.fill(); 
         ctx.beginPath(); ctx.arc(x+8, y+bob, 3, 0, Math.PI*2); ctx.fill();
 
-        // Mouth
         if(emotion === 'ANGRY') {
-            ctx.beginPath(); ctx.arc(x, y+10+bob, 5, Math.PI, 0); ctx.stroke(); // Frown
+            ctx.beginPath(); ctx.arc(x, y+10+bob, 5, Math.PI, 0); ctx.stroke(); 
         } else {
-            ctx.beginPath(); ctx.arc(x, y+5+bob, 5, 0, Math.PI); ctx.stroke(); // Smile
+            ctx.beginPath(); ctx.arc(x, y+5+bob, 5, 0, Math.PI); ctx.stroke(); 
         }
 
-        // Mustache
         if(hasMustache) {
             ctx.lineWidth=3;
             ctx.beginPath(); ctx.moveTo(x-10, y+8+bob); ctx.quadraticCurveTo(x, y+2+bob, x+10, y+8+bob); ctx.stroke();
@@ -508,7 +514,7 @@ const Game = {
         if(c.state==='CHAD') {
             ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(c.cooldown>0?"💤":"🤬", c.x, c.y-50+bob);
         } else {
-            ctx.beginPath(); ctx.moveTo(c.x, c.y-30+bob); ctx.lineTo(c.x+30, c.y-60+bob); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(c.x, c.y-30+bob); ctx.lineTo(c.x+30, c.y-60+bob); ctx.lineWidth=3; ctx.strokeStyle="black"; ctx.stroke();
             this.circle(c.x+40, c.y-65+bob, 30, "white");
             ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.textAlign="center"; ctx.fillText(c.task.icon, c.x+40, c.y-52+bob);
             
