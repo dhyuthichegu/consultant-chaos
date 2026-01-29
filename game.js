@@ -422,67 +422,78 @@ const Game = {
         const ctx = this.ctx;
         const bob = Math.sin(frame)*3;
         
-        // Legs
-        ctx.strokeStyle="black"; ctx.lineWidth=4; ctx.lineCap="round";
+        // --- LEGS (Stick legs, classic OverSimplified) ---
+        ctx.strokeStyle="black"; ctx.lineWidth=3; ctx.lineCap="round";
         const step = Math.sin(frame*0.8) * 6;
-        ctx.beginPath(); ctx.moveTo(x-8, y+20); ctx.lineTo(x-8, y+45+step); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x+8, y+20); ctx.lineTo(x+8, y+45-step); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-5, y+35); ctx.lineTo(x-5, y+50+step); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+5, y+35); ctx.lineTo(x+5, y+50-step); ctx.stroke();
 
-        // Body
+        // --- BODY (Bell/Pawn Shape) ---
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
         if (gender === 'FEMALE') {
-            ctx.fillStyle = color;
-            ctx.beginPath(); 
-            ctx.moveTo(x-15, y+5+bob); ctx.lineTo(x+15, y+5+bob); // Shoulders
-            ctx.lineTo(x+20, y+35+bob); ctx.lineTo(x-20, y+35+bob); // Hem
-            ctx.closePath(); ctx.fill(); ctx.stroke();
+            // Dress (Bell Shape)
+            ctx.moveTo(x, y+10+bob); // Neck center
+            ctx.quadraticCurveTo(x-15, y+15+bob, x-15, y+40+bob); // Left curve
+            ctx.lineTo(x+15, y+40+bob); // Bottom
+            ctx.quadraticCurveTo(x+15, y+15+bob, x, y+10+bob); // Right curve
         } else {
-            ctx.fillStyle = color;
-            ctx.beginPath(); ctx.arc(x, y+20+bob, 18, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-            ctx.fillStyle="white"; ctx.beginPath(); ctx.moveTo(x-6, y+10+bob); ctx.lineTo(x+6, y+10+bob); ctx.lineTo(x, y+25+bob); ctx.fill();
-            ctx.strokeStyle = isPlayer ? "red" : "blue"; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x, y+10+bob); ctx.lineTo(x, y+28+bob); ctx.stroke();
+            // Suit (Rounded Rect)
+            ctx.roundRect(x-12, y+10+bob, 24, 30, 5);
+        }
+        ctx.fill(); ctx.stroke();
+
+        // --- OUTFIT DETAILS ---
+        if(gender === 'MALE') {
+            // White Shirt Triangle
+            ctx.fillStyle="white";
+            ctx.beginPath(); ctx.moveTo(x, y+25+bob); ctx.lineTo(x-5, y+10+bob); ctx.lineTo(x+5, y+10+bob); ctx.fill();
+            // Tie (Thin Line)
+            ctx.strokeStyle = isPlayer ? "#e74c3c" : "#2980b9";
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(x, y+10+bob); ctx.lineTo(x, y+25+bob); ctx.stroke();
         }
 
-        // Head
-        ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
-        ctx.beginPath(); ctx.arc(x, y+bob, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        // --- HEAD (Large Circle) ---
+        ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7"; // Skin
+        ctx.beginPath(); ctx.arc(x, y-2+bob, 24, 0, Math.PI*2); ctx.fill(); 
+        ctx.lineWidth = 3; ctx.strokeStyle="black"; ctx.stroke();
 
-        // Hair
-        ctx.fillStyle = gender === 'FEMALE' ? "#e1b12c" : "#634a36"; 
+        // --- HAIR (Simple Shapes) ---
+        ctx.fillStyle = gender === 'FEMALE' ? "#e1b12c" : "#634a36";
         if(!isPlayer) {
-             const hairIndex = Math.floor(x/100) % 3; 
-             const hairColors = ['#634a36', '#2d3436', '#e1b12c'];
-             ctx.fillStyle = hairColors[hairIndex];
+             const hCol = ['#634a36', '#2d3436', '#e1b12c', '#d35400'][Math.floor(x/100)%4];
+             ctx.fillStyle = hCol;
         }
 
         if(gender === 'FEMALE') {
-            ctx.beginPath(); ctx.arc(x, y+bob, 24, Math.PI, 0); 
-            ctx.lineTo(x+24, y+25+bob); ctx.lineTo(x-24, y+25+bob); 
-            ctx.fill(); ctx.stroke();
+            // Long Hair (Behind head logic visual trick)
+            ctx.beginPath(); ctx.arc(x, y-2+bob, 26, Math.PI, 0); ctx.lineTo(x+26, y+20+bob); ctx.lineTo(x-26, y+20+bob); ctx.fill(); ctx.stroke();
+            // Redraw face to cover front hair
             ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
-            ctx.beginPath(); ctx.arc(x, y+bob, 20, 0, Math.PI*2); ctx.fill(); 
+            ctx.beginPath(); ctx.arc(x, y-2+bob, 24, 0, Math.PI*2); ctx.fill(); ctx.stroke();
         } else {
-            ctx.beginPath(); ctx.arc(x, y+bob-2, 22, Math.PI, 0); ctx.fill(); ctx.stroke();
+            // Short Hair (Cap)
+            ctx.beginPath(); ctx.arc(x, y-5+bob, 24, Math.PI, 0); ctx.fill(); ctx.stroke();
         }
 
-        // Face
-        ctx.fillStyle="black"; ctx.strokeStyle="black"; ctx.lineWidth=2;
+        // --- FACE (The "OverSimplified" Dot Eyes) ---
+        ctx.fillStyle="black";
         if(emotion === 'ANGRY') {
-            ctx.beginPath(); ctx.moveTo(x-10, y-5+bob); ctx.lineTo(x-2, y+bob); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x+10, y-5+bob); ctx.lineTo(x+2, y+bob); ctx.stroke();
-        } 
-        ctx.beginPath(); ctx.arc(x-8, y+bob, 3, 0, Math.PI*2); ctx.fill(); 
-        ctx.beginPath(); ctx.arc(x+8, y+bob, 3, 0, Math.PI*2); ctx.fill();
-
-        if(emotion === 'ANGRY') {
-            ctx.beginPath(); ctx.arc(x, y+10+bob, 5, Math.PI, 0); ctx.stroke(); 
-        } else {
-            ctx.beginPath(); ctx.arc(x, y+5+bob, 5, 0, Math.PI); ctx.stroke(); 
+            // Angry Eyebrows
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x-8, y-8+bob); ctx.lineTo(x-2, y-4+bob); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x+8, y-8+bob); ctx.lineTo(x+2, y-4+bob); ctx.stroke();
         }
+        // Dots
+        ctx.beginPath(); ctx.arc(x-5, y+bob, 2.5, 0, Math.PI*2); ctx.fill(); 
+        ctx.beginPath(); ctx.arc(x+5, y+bob, 2.5, 0, Math.PI*2); ctx.fill();
 
+        // Mustache (Simple Curve)
         if(hasMustache) {
-            ctx.lineWidth=3;
-            ctx.beginPath(); ctx.moveTo(x-10, y+8+bob); ctx.quadraticCurveTo(x, y+2+bob, x+10, y+8+bob); ctx.stroke();
+            ctx.lineWidth=2; ctx.strokeStyle="black";
+            ctx.beginPath(); ctx.moveTo(x-6, y+8+bob); ctx.quadraticCurveTo(x, y+4+bob, x+6, y+8+bob); ctx.stroke();
         }
     },
 
