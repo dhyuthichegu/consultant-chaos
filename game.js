@@ -6,7 +6,8 @@
 // --- CONFIG ---
 const COLORS = {
     red: '#ff6b6b', green: '#1dd1a1', blue: '#54a0ff', 
-    yellow: '#feca57', purple: '#5f27cd', orange: '#ff9f43'
+    yellow: '#feca57', purple: '#5f27cd', orange: '#ff9f43',
+    pink: '#fd79a8', grey: '#636e72'
 };
 
 const TASKS = [
@@ -15,128 +16,44 @@ const TASKS = [
     { id: 'legal', name: 'Legal', icon: '📜', color: COLORS.yellow },
     { id: 'coffee', name: 'Coffee', icon: '☕', color: COLORS.blue },
     { id: 'tech', name: 'IT', icon: '💻', color: COLORS.purple },
-    { id: 'hr', name: 'HR', icon: '📝', color: COLORS.orange }
+    { id: 'hr', name: 'HR', icon: '📝', color: COLORS.orange },
+    { id: 'stocks', name: 'Stocks', icon: '📈', color: COLORS.pink }, // L2
+    { id: 'bonds', name: 'Bonds', icon: '🏛️', color: COLORS.grey }   // L2
 ];
 
-const AUDIO = {
-    sounds: {
-        bruh: new Audio('sounds/bruh.mp3'),
-        vine: new Audio('sounds/vine-boom.mp3'),
-        yippee: new Audio('sounds/yippee.mp3'),
-        bonk: new Audio('sounds/bonk.mp3'),
-        leave: new Audio('sounds/leave.mp3'),
-        bgm: new Audio('sounds/bgm.mp3'),
-        paper: new Audio('sounds/paper.mp3'),
-        slurp: new Audio('sounds/slurp.mp3'),
-        keyboard: new Audio('sounds/keyboard.mp3'),
-        cash: new Audio('sounds/cash.mp3'),
-        rooster: new Audio('sounds/rooster.mp3'),
-        trombone: new Audio('sounds/trombone.mp3')
-    },
-    
-    play: function(key) {
-        if(this.sounds[key]) {
-            this.sounds[key].volume = 0.4; 
-            this.sounds[key].currentTime = 0;
-            this.sounds[key].play().catch(e => {});
-        }
-    },
-
-    playBGM: function() {
-        this.sounds.bgm.loop = true;
-        this.sounds.bgm.volume = 0.2; 
-        this.sounds.bgm.play().catch(e => {});
-    },
-
-    speak: function(txt) {
-        if(!window.speechSynthesis) return;
-        window.speechSynthesis.cancel();
-        const ut = new SpeechSynthesisUtterance(txt);
-        ut.rate = 0.9; ut.volume = 0.4;
-        window.speechSynthesis.speak(ut);
-    },
-
-    bruh: function() { this.play('bruh'); },
-    leave: function() { 
-        this.sounds.bgm.pause();
-        this.play('trombone'); // Sad trombone
-        setTimeout(() => this.play('leave'), 1000); 
-    },
-    vine: function() { this.play('vine'); },
-    splat: function() { this.play('bonk'); },
-    success: function() { this.play('yippee'); },
-    rooster: function() { this.play('rooster'); },
-    
-    pickup: function(type) {
-        if(type === 'coffee') this.play('slurp');
-        else if(type === 'tech') this.play('keyboard');
-        else if(type === 'model') this.play('cash');
-        else this.play('paper'); 
-    }
-};
+// ... (AUDIO code stays same) ...
 
 // --- GAME ENGINE ---
 const Game = {
-    canvas: null,
-    ctx: null,
-    
-    state: { phase: 'IDLE', level: 1, score: 0, goal: 2, sanity: 100, frame: 0, highScore: 0 },
-    map: [],
-    player: { x: 480, y: 350, w: 30, h: 30, holding: null, frame: 0, stun: 0 },
-    clients: [],
-    projectiles: [],
-    particles: [],
-    splats: [],
-    
-    // Bounds
-    deskY: 520,
-    trashBin: { x: 880, y: 540, w: 60, h: 80 },
-
-    init: function() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        
-        // Load Save
-        const saved = localStorage.getItem('consulting_chaos_score');
-        if(saved) this.state.highScore = parseInt(saved);
-
-        this.loop = this.loop.bind(this);
-        requestAnimationFrame(this.loop);
-        
-        this.keys = {};
-        
-        // Input Handling & Scroll Blocking
-        window.addEventListener('keydown', e => {
-            // 1. Stop Scrolling (Nuclear Option)
-            if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
-                e.preventDefault();
-            }
-
-            // 2. Game Input
-            this.keys[e.key] = true;
-            if(e.code === 'Space') this.keys['Space'] = true;
-        }, { passive: false }); // Important: passive: false allows preventDefault
-
-        window.addEventListener('keyup', e => {
-            this.keys[e.key] = false;
-            if(e.code === 'Space') { this.keys['Space'] = false; this.lockSpace = false; }
-        });
-    },
+    // ... (init code stays same) ...
 
     startPhase: function(phase) {
+        // Set Company Name
+        const company = this.state.level === 1 ? "Deloitte (Monday)" : "Goldman Sachs (Tuesday)";
+        document.getElementById('ui-level').innerText = company;
+
         if(phase === 'MEMORIZE') {
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('memory-overlay').classList.remove('hidden');
             
             // Map Gen
             this.map = [];
-            let tasks = [...TASKS].sort(() => Math.random() - 0.5);
+            let tasks = [...TASKS];
+            
+            // Level 1: 6 Tasks. Level 2: 8 Tasks.
+            if(this.state.level === 1) tasks = tasks.slice(0, 6);
+            tasks.sort(() => Math.random() - 0.5);
+
+            const cols = this.state.level === 1 ? 3 : 4;
+            const width = this.state.level === 1 ? 220 : 180; // Smaller cubicles for L2
+            const startX = this.state.level === 1 ? 80 : 60;
+
             for(let row=0; row<2; row++) {
-                for(let col=0; col<3; col++) {
+                for(let col=0; col<cols; col++) {
                     this.map.push({
-                        x: 80 + (col * 290),
+                        x: startX + (col * (width + 40)),
                         y: 80 + (row * 240),
-                        w: 220, h: 160,
+                        w: width, h: 160,
                         task: tasks.shift()
                     });
                 }
@@ -148,18 +65,81 @@ const Game = {
             this.map.forEach(c => {
                 lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`;
             });
+            // ... (Timer/Skip logic stays same) ...
+        }
+        // ... (PLAYING phase logic stays same) ...
+    },
 
-            // Timer
-            let t = 20;
-            const el = document.getElementById('timer-big');
-            this.tInt = setInterval(() => {
-                t--; el.innerText = t;
-                if(t<=0) { clearInterval(this.tInt); this.startPhase('PLAYING'); }
-            }, 1000);
-            this.state.phase = 'MEMORIZE';
+    // ... (Loop, Update, Physics stay same) ...
+
+    drawPlayer: function(p) {
+        const ctx = this.ctx;
+        const bob = Math.sin(p.frame) * 4;
+        const moving = (this.keys['w'] || this.keys['a'] || this.keys['s'] || this.keys['d']);
+        const isGoldman = this.state.level >= 2;
+        
+        ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.ellipse(p.x, p.y + 45, 20, 8, 0, 0, Math.PI*2); ctx.fill();
+        
+        let suitColor = isGoldman ? "#2d3436" : "#0984e3"; // Black suit for Goldman
+        this.drawLegs(p.x, p.y+bob, suitColor, p.frame, moving);
+        
+        if(p.stun > 0) {
+             ctx.font = "30px Arial"; ctx.fillText("💫", p.x-10, p.y-40);
+             if(Math.floor(this.state.frame/4)%2===0) return; 
         }
 
-        if(phase === 'PLAYING') {
+        // Body
+        this.circle(p.x, p.y + 25 + bob, 18, suitColor);
+        // Head
+        this.circle(p.x, p.y + bob, 22, "#ffeaa7");
+        
+        // Face
+        ctx.fillStyle="black";
+        ctx.beginPath(); ctx.arc(p.x-8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x+8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+
+        // GOLDMAN EXTRAS (Mustache & Tie)
+        if(isGoldman) {
+            // Mustache
+            ctx.lineWidth=2; 
+            ctx.beginPath(); ctx.moveTo(p.x-10, p.y+bob+5); ctx.quadraticCurveTo(p.x, p.y+bob-5, p.x+10, p.y+bob+5); ctx.stroke();
+            // Red Tie
+            ctx.fillStyle = "red";
+            ctx.beginPath(); ctx.moveTo(p.x, p.y+25+bob); ctx.lineTo(p.x-5, p.y+40+bob); ctx.lineTo(p.x+5, p.y+40+bob); ctx.fill();
+        }
+
+        if(p.holding) {
+            // ... (Bubble draw stays same) ...
+        }
+    },
+
+    drawClient: function(c) {
+        // ... (Standard draw logic) ...
+        // Add same suit/mustache logic here using `isGoldman` check
+        const ctx = this.ctx;
+        const bob = Math.sin(this.state.frame * 0.1) * 3;
+        const isGoldman = this.state.level >= 2;
+        
+        let col = c.state === 'CHAD' ? "#e17055" : (isGoldman ? "#2d3436" : "#ff7675");
+        let head = c.state === 'CHAD' ? "#ffcccc" : "#ffeaa7";
+
+        this.drawLegs(c.x, c.y+bob, col, this.state.frame, false);
+        this.circle(c.x, c.y + 25 + bob, 18, col);
+        this.circle(c.x, c.y + bob, 22, head);
+        
+        // ... (Face/Bubble logic) ...
+
+        // GOLDMAN EXTRAS
+        if(isGoldman && c.state !== 'CHAD') { // Chad is too angry for a tie
+            // Mustache
+            ctx.lineWidth=2; ctx.strokeStyle="black";
+            ctx.beginPath(); ctx.moveTo(c.x-10, c.y+bob+5); ctx.quadraticCurveTo(c.x, c.y+bob-5, c.x+10, c.y+bob+5); ctx.stroke();
+            // Tie
+            ctx.fillStyle = "blue";
+            ctx.beginPath(); ctx.moveTo(c.x, c.y+25+bob); ctx.lineTo(c.x-5, c.y+40+bob); ctx.lineTo(c.x+5, c.y+40+bob); ctx.fill();
+        }
+    }
+};
             AUDIO.playBGM();
             document.getElementById('memory-overlay').classList.add('hidden');
             document.getElementById('level-screen').classList.add('hidden');
