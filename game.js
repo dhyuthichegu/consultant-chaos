@@ -105,6 +105,11 @@ const Game = {
         
         this.keys = {};
         window.addEventListener('keydown', e => {
+            // Prevent scrolling
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"," "].includes(e.key) || e.code === "Space") {
+                e.preventDefault();
+            }
+
             this.keys[e.key] = true;
             if(e.code === 'Space') this.keys['Space'] = true;
         });
