@@ -1,6 +1,6 @@
 /**
- * CONSULTING CHAOS V11.8
- * Final Layout & Interaction Fixes + Coffee Steam
+ * CONSULTING CHAOS V12.0
+ * 'OverSimplified' Art Style Upgrade
  */
 
 // --- CONFIG ---
@@ -109,8 +109,6 @@ const Game = {
                 lg.style.gridTemplateColumns = this.state.level === 1 ? "1fr 1fr 1fr" : "1fr 1fr 1fr 1fr";
                 this.map.forEach(c => lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`);
             }
-
-            // Removed dynamic button creation to fix duplicate
 
             let t = 20;
             const el = document.getElementById('timer-big');
@@ -366,6 +364,7 @@ const Game = {
 
     drawCubicle: function(c) {
         const ctx = this.ctx;
+        
         ctx.fillStyle = c.task.color; 
         ctx.fillRect(c.x, c.y, c.w, c.h);
         ctx.lineWidth=4; ctx.strokeStyle="black"; ctx.strokeRect(c.x, c.y, c.w, c.h);
@@ -499,7 +498,10 @@ const Game = {
 
     drawPlayer: function(p) {
         const bob = Math.sin(p.frame)*4;
-        this.drawAvatar(p.x+15, p.y+15, "#0984e3", 'MALE', p.frame, true, false, 'HAPPY'); 
+        // Shadow
+        this.ctx.fillStyle="rgba(0,0,0,0.2)"; this.ctx.beginPath(); this.ctx.ellipse(p.x+15, p.y+45, 18, 6, 0, 0, Math.PI*2); this.ctx.fill();
+        
+        this.drawAvatar(p.x+15, p.y, "#0984e3", 'MALE', p.frame, true, false, 'HAPPY'); 
 
         if(p.stun>0) { this.ctx.font = "30px Arial"; this.ctx.fillText("💫", p.x, p.y-20); }
 
@@ -520,17 +522,17 @@ const Game = {
         if(!isGoldman) col = c.gender === 'MALE' ? "#74b9ff" : "#fab1a0";
 
         const emotion = c.state === 'CHAD' ? 'ANGRY' : 'HAPPY';
-        this.drawAvatar(c.x, c.y, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'), emotion);
+        this.drawAvatar(c.x+20, c.y, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'), emotion);
 
         if(c.state==='CHAD') {
             ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(c.cooldown>0?"💤":"🤬", c.x, c.y-50+bob);
         } else {
-            ctx.beginPath(); ctx.moveTo(c.x, c.y-30+bob); ctx.lineTo(c.x+30, c.y-60+bob); ctx.lineWidth=3; ctx.strokeStyle="black"; ctx.stroke();
-            this.circle(c.x+40, c.y-65+bob, 30, "white");
-            ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.textAlign="center"; ctx.fillText(c.task.icon, c.x+40, c.y-52+bob);
+            ctx.beginPath(); ctx.moveTo(c.x+20, c.y-10+bob); ctx.lineTo(c.x+50, c.y-60+bob); ctx.lineWidth=3; ctx.strokeStyle="black"; ctx.stroke();
+            this.circle(c.x+60, c.y-65+bob, 30, "white");
+            ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.textAlign="center"; ctx.fillText(c.task.icon, c.x+60, c.y-52+bob);
             
-            ctx.fillStyle="white"; ctx.fillRect(c.x-25, c.y+55, 50, 10); ctx.strokeRect(c.x-25, c.y+55, 50, 10);
-            ctx.fillStyle=c.patience<30?"red":"#00b894"; ctx.fillRect(c.x-23, c.y+57, 46*(c.patience/100), 6);
+            ctx.fillStyle="white"; ctx.fillRect(c.x-5, c.y+60, 50, 10); ctx.strokeRect(c.x-5, c.y+60, 50, 10);
+            ctx.fillStyle=c.patience<30?"red":"#00b894"; ctx.fillRect(c.x-3, c.y+62, 46*(c.patience/100), 6);
         }
     }
 };
