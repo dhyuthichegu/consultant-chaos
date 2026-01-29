@@ -1,8 +1,9 @@
 /**
- * CONSULTING CHAOS V11
- * Level 2 Expansion (Clean)
+ * CONSULTING CHAOS V11.1
+ * Level 2 Expansion + Detailed Visuals & Avatar Customization
  */
 
+// --- CONFIG ---
 const COLORS = {
     red: '#ff6b6b', green: '#1dd1a1', blue: '#54a0ff', 
     yellow: '#feca57', purple: '#5f27cd', orange: '#ff9f43',
@@ -111,6 +112,9 @@ const Game = {
                 this.map.forEach(c => lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`);
             }
 
+            // Skip Button (Check if exists, if not created in HTML, we leave it)
+            // (Assumed Skip Button is in HTML now based on previous fixes)
+
             // Timer
             let t = 20;
             const el = document.getElementById('timer-big');
@@ -126,6 +130,7 @@ const Game = {
         if(phase === 'PLAYING') {
             AUDIO.playBGM();
             document.getElementById('memory-overlay').classList.add('hidden');
+            document.getElementById('level-screen').classList.add('hidden');
             this.state.phase = 'PLAYING';
             this.state.score = 0;
             this.state.sanity = 100;
@@ -155,7 +160,7 @@ const Game = {
         if(img) img.src = `images/${rGif}`;
         
         this.state.level++;
-        this.startPhase('MEMORIZE'); // Back to memorize for new map
+        this.startPhase('MEMORIZE'); 
     },
 
     loop: function() {
@@ -239,16 +244,17 @@ const Game = {
     },
 
     spawnClient: function() {
-        const t = TASKS[Math.floor(Math.random() * TASKS.length)]; // Any task allowed in L2? Yes.
-        // But for L1 we should limit tasks? The map generation limits tasks, but clients need to request existing ones.
-        // FIX: Only pick from active map tasks
         const validTasks = this.map.map(m => m.task);
         const task = validTasks[Math.floor(Math.random() * validTasks.length)];
+        const isMale = Math.random() > 0.5;
         
         this.clients.push({
             x: 150 + (this.clients.length * 250),
             y: this.deskY+40, w:40, h:40,
-            task: task, patience: 100, state: 'WAITING', attackTimer:0, cooldown:0, frame:0
+            task: task, patience: 100, state: 'WAITING', attackTimer: 0, cooldown: 0, frame: 0,
+            gender: isMale ? 'MALE' : 'FEMALE',
+            hairColor: ['#634a36', '#2d3436', '#e1b12c'][Math.floor(Math.random()*3)], 
+            suitColor: isMale ? ['#2d3436', '#636e72', '#0984e3'][Math.floor(Math.random()*3)] : ['#e84393', '#fd79a8', '#6c5ce7'][Math.floor(Math.random()*3)]
         });
         AUDIO.vine();
     },
@@ -318,6 +324,8 @@ const Game = {
 
         this.splats.forEach(s => { ctx.fillStyle="rgba(101,67,33,0.5)"; ctx.beginPath(); ctx.ellipse(s.x, s.y, 30, 20, 0, 0, Math.PI*2); ctx.fill(); });
 
+        this.drawPlant(20, 300); this.drawPlant(900, 300);
+
         this.map.forEach(c => this.drawCubicle(c));
         ctx.fillStyle="#57606f"; ctx.fillRect(0, this.deskY, 960, 20);
         ctx.fillStyle="black"; ctx.font="80px Arial"; ctx.fillText("🗑️", this.trashBin.x-20, this.trashBin.y+40);
@@ -346,14 +354,35 @@ const Game = {
         const ctx=this.ctx;
         ctx.fillStyle=c.task.color; ctx.fillRect(c.x, c.y, c.w, c.h);
         ctx.lineWidth=4; ctx.strokeStyle="black"; ctx.strokeRect(c.x, c.y, c.w, c.h);
+        
+        // Desk
+        ctx.fillStyle="#e58e26"; 
+        ctx.fillRect(c.x+20, c.y+20, c.w-40, 50); ctx.strokeRect(c.x+20, c.y+20, c.w-40, 50);
+        ctx.fillRect(c.x+c.w-60, c.y+20, 40, c.h-40); ctx.strokeRect(c.x+c.w-60, c.y+20, 40, c.h-40);
+
+        // Walls
         ctx.fillStyle="#ced6e0";
-        ctx.fillRect(c.x, c.y, 15, c.h); ctx.strokeRect(c.x, c.y, 15, c.h);
-        ctx.fillRect(c.x+c.w-15, c.y, 15, c.h); ctx.strokeRect(c.x+c.w-15, c.y, 15, c.h);
-        ctx.fillStyle="#e58e26"; ctx.fillRect(c.x+20, c.y+20, c.w-40, 50); ctx.strokeRect(c.x+20, c.y+20, c.w-40, 50);
+        this.rect(c.x, c.y, 15, c.h, "#ced6e0");
+        this.rect(c.x+c.w-15, c.y, 15, c.h, "#ced6e0");
+        this.rect(c.x, c.y, c.w, 15, "#ced6e0");
+
+        // Props
+        this.rect(c.x+40, c.y+10, 60, 40, "#2f3640");
+        ctx.fillStyle="#3498db"; ctx.fillRect(c.x+45, c.y+15, 50, 30);
+        this.rect(c.x+50, c.y+55, 40, 10, "#dcdde1");
+        this.rect(c.x+c.w-50, c.y+80, 25, 30, "white");
+        this.circle(c.x+80, c.y+100, 18, "#2f3640");
+
         if(this.state.phase==='MEMORIZE') {
             ctx.fillStyle="rgba(255,255,255,0.8)"; ctx.fillRect(c.x+20, c.y+80, c.w-40, 60);
-            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(c.task.icon, c.x+c.w/2-20, c.y+120);
+            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center";
+            ctx.fillText(c.task.icon, c.x+c.w/2-20, c.y+120);
         }
+    },
+
+    drawPlant: function(x, y) {
+        this.rect(x, y+20, 40, 40, "#e17055"); 
+        this.circle(x+20, y+10, 25, "#00b894"); 
     },
 
     drawLegs: function(x, y, f, m) {
@@ -371,33 +400,59 @@ const Game = {
         this.drawLegs(p.x, p.y+bob, p.frame, m);
         
         let suit = isGoldman ? "#2d3436" : "#0984e3";
-        ctx.fillStyle=suit; ctx.beginPath(); ctx.arc(p.x, p.y+25+bob, 18, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle="#ffeaa7"; ctx.beginPath(); ctx.arc(p.x, p.y+bob, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        this.circle(p.x, p.y+25+bob, 18, suit);
+        // Shirt Triangle
+        ctx.fillStyle="white"; ctx.beginPath(); ctx.moveTo(p.x-5, p.y+15+bob); ctx.lineTo(p.x+5, p.y+15+bob); ctx.lineTo(p.x, p.y+25+bob); ctx.fill();
+        // Red Tie
+        ctx.strokeStyle="red"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(p.x, p.y+15+bob); ctx.lineTo(p.x, p.y+35+bob); ctx.stroke();
+
+        this.circle(p.x, p.y+bob, 22, "#ffeaa7");
+        ctx.fillStyle="#634a36"; ctx.beginPath(); ctx.arc(p.x, p.y+bob-5, 22, Math.PI, 0); ctx.fill(); // Hair
         
-        if(isGoldman) { // Mustache & Tie
-            ctx.strokeStyle="black"; ctx.lineWidth=2; 
+        ctx.fillStyle="black";
+        ctx.beginPath(); ctx.arc(p.x-8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill(); 
+        ctx.beginPath(); ctx.arc(p.x+8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+
+        if(isGoldman) { // Mustache
+            ctx.lineWidth=2; ctx.strokeStyle="black";
             ctx.beginPath(); ctx.moveTo(p.x-10, p.y+bob+5); ctx.quadraticCurveTo(p.x, p.y+bob-5, p.x+10, p.y+bob+5); ctx.stroke();
-            ctx.fillStyle="red"; ctx.beginPath(); ctx.moveTo(p.x, p.y+25+bob); ctx.lineTo(p.x-5, p.y+40+bob); ctx.lineTo(p.x+5, p.y+40+bob); ctx.fill();
         }
 
         if(p.holding) {
             ctx.beginPath(); ctx.moveTo(p.x, p.y-30+bob); ctx.lineTo(p.x+30, p.y-70+bob); ctx.stroke();
-            ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(p.x+40, p.y-80+bob, 35, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(p.holding.icon, p.x+20, p.y-65+bob);
+            this.circle(p.x+40, p.y-80+bob, 35, "white");
+            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(p.holding.icon, p.x+40, p.y-65+bob);
         }
     },
 
     drawClient: function(c) {
         const ctx=this.ctx; const bob=Math.sin(this.state.frame*0.1)*3;
         const isGoldman = this.state.level >= 2;
-        let col = c.state==='CHAD'?"#e17055":(isGoldman?"#2d3436":"#ff7675");
+        let col = c.state==='CHAD'?"#e17055": c.suitColor;
         
         this.drawLegs(c.x, c.y+bob, this.state.frame, false);
-        ctx.fillStyle=col; ctx.beginPath(); ctx.arc(c.x, c.y+25+bob, 18, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle=c.state==='CHAD'?"#ffcccc":"#ffeaa7"; ctx.beginPath(); ctx.arc(c.x, c.y+bob, 22, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        this.circle(c.x, c.y+25+bob, 18, col);
+        this.circle(c.x, c.y+bob, 22, c.state==='CHAD'?"#ffcccc":"#ffeaa7");
 
-        if(isGoldman && c.state!=='CHAD') {
-            ctx.strokeStyle="black"; ctx.lineWidth=2; 
+        ctx.fillStyle = c.hairColor;
+        if(c.gender === 'MALE') {
+            ctx.beginPath(); ctx.arc(c.x, c.y+bob-5, 22, Math.PI, 0); ctx.fill(); 
+        } else {
+            ctx.beginPath(); ctx.arc(c.x, c.y+bob-5, 22, Math.PI, 0); ctx.lineTo(c.x+22, c.y+bob+20); ctx.lineTo(c.x-22, c.y+bob+20); ctx.fill();
+        }
+
+        ctx.fillStyle="black";
+        if(c.state==='CHAD') {
+             ctx.lineWidth=2; 
+             ctx.beginPath(); ctx.moveTo(c.x-12, c.y-5+bob); ctx.lineTo(c.x-2, c.y+bob); ctx.stroke();
+             ctx.beginPath(); ctx.moveTo(c.x+12, c.y-5+bob); ctx.lineTo(c.x+2, c.y+bob); ctx.stroke();
+        } else {
+             ctx.beginPath(); ctx.arc(c.x-8, c.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+             ctx.beginPath(); ctx.arc(c.x+8, c.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
+        }
+
+        if(isGoldman && c.gender==='MALE' && c.state!=='CHAD') {
+            ctx.lineWidth=2; ctx.strokeStyle="black";
             ctx.beginPath(); ctx.moveTo(c.x-10, c.y+bob+5); ctx.quadraticCurveTo(c.x, c.y+bob-5, c.x+10, c.y+bob+5); ctx.stroke();
         }
 
@@ -405,12 +460,21 @@ const Game = {
             ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(c.cooldown>0?"💤":"🤬", c.x-20, c.y-50+bob);
         } else {
             ctx.beginPath(); ctx.moveTo(c.x, c.y-30+bob); ctx.lineTo(c.x+30, c.y-60+bob); ctx.stroke();
-            ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(c.x+40, c.y-65+bob, 30, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            this.circle(c.x+40, c.y-65+bob, 30, "white");
             ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.fillText(c.task.icon, c.x+25, c.y-52+bob);
             
             ctx.fillStyle="white"; ctx.fillRect(c.x-25, c.y+55, 50, 10); ctx.strokeRect(c.x-25, c.y+55, 50, 10);
             ctx.fillStyle=c.patience<30?"red":"#00b894"; ctx.fillRect(c.x-23, c.y+57, 46*(c.patience/100), 6);
         }
+    },
+
+    rect: function(x, y, w, h, col) { 
+        this.ctx.fillStyle = col; this.ctx.fillRect(x,y,w,h); 
+        this.ctx.lineWidth = 4; this.ctx.strokeStyle="black"; this.ctx.strokeRect(x,y,w,h); 
+    },
+    circle: function(x, y, r, col) {
+        this.ctx.fillStyle = col; this.ctx.beginPath(); this.ctx.arc(x,y,r,0,Math.PI*2); this.ctx.fill();
+        this.ctx.stroke();
     }
 };
 
