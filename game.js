@@ -401,63 +401,105 @@ const Game = {
         this.circle(x+20, y+10, 25, "#00b894"); 
     },
 
-    drawAvatar: function(x, y, color, gender, frame, isPlayer, hasMustache, emotion) {
+    drawMeeple: function(x, y, color, gender, frame, isPlayer, hasMustache, emotion) {
         const ctx = this.ctx;
-        const bob = Math.sin(frame)*3;
+        const bob = Math.sin(frame) * 3;
+        const w = 30; // Body width
+        const h = 40; // Body height
         
-        // Legs
-        ctx.strokeStyle="black"; ctx.lineWidth=4; ctx.lineCap="round";
-        const step = Math.sin(frame*0.8) * 6;
-        ctx.beginPath(); ctx.moveTo(x-8, y+20); ctx.lineTo(x-8, y+45+step); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x+8, y+20); ctx.lineTo(x+8, y+45-step); ctx.stroke();
+        // --- LEGS (Thick & Rounded) ---
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        const step = Math.sin(frame * 0.8) * 6;
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y + h - 5); ctx.lineTo(x - 8, y + h + 10 + step); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + 8, y + h - 5); ctx.lineTo(x + 8, y + h + 10 - step); ctx.stroke();
 
-        if (gender === 'FEMALE') {
-            // DRESS
-            ctx.fillStyle = color;
-            ctx.beginPath(); ctx.moveTo(x-12, y+5+bob); ctx.lineTo(x+12, y+5+bob); ctx.lineTo(x+18, y+35+bob); ctx.lineTo(x-18, y+35+bob);
-            ctx.closePath(); ctx.fill(); ctx.stroke();
-        } else {
-            // SUIT
-            ctx.fillStyle = color;
-            ctx.beginPath(); ctx.roundRect(x-14, y+5+bob, 28, 30, 5); ctx.fill(); ctx.stroke();
-            ctx.fillStyle="white"; ctx.beginPath(); ctx.moveTo(x-6, y+5+bob); ctx.lineTo(x+6, y+5+bob); ctx.lineTo(x, y+18+bob); ctx.fill();
-            ctx.strokeStyle = isPlayer ? "red" : "blue"; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x, y+5+bob); ctx.lineTo(x, y+22+bob); ctx.stroke();
-        }
-
-        // Head
-        ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
-        ctx.beginPath(); ctx.arc(x, y-5+bob, 14, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-        
-        // Hair
-        ctx.fillStyle = gender === 'FEMALE' ? "#e1b12c" : "#634a36";
+        // --- BODY (Smooth Pill Shape) ---
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
         if(gender === 'FEMALE') {
-            ctx.beginPath(); ctx.arc(x, y-5+bob, 14, Math.PI, 0); ctx.lineTo(x+14, y+10+bob); ctx.lineTo(x-14, y+10+bob); ctx.fill(); ctx.stroke();
+            // Dress Shape (Flared bottom)
+            ctx.moveTo(x - w/2 + 5, y + bob); // Top Left
+            ctx.lineTo(x + w/2 - 5, y + bob); // Top Right
+            ctx.quadraticCurveTo(x + w/2 + 5, y + h/2 + bob, x + w/2 + 8, y + h + bob); // Flare Right
+            ctx.quadraticCurveTo(x, y + h + 5 + bob, x - w/2 - 8, y + h + bob); // Bottom Curve
+            ctx.quadraticCurveTo(x - w/2 - 5, y + h/2 + bob, x - w/2 + 5, y + bob); // Flare Left
         } else {
-            ctx.beginPath(); ctx.arc(x, y-8+bob, 14, Math.PI, 0); ctx.fill(); ctx.stroke();
+            // Pill Shape (Standard)
+            ctx.roundRect(x - w/2, y + bob, w, h, 15);
+        }
+        ctx.fill(); ctx.stroke();
+
+        // --- SHADING (Faux 3D) ---
+        ctx.fillStyle = "rgba(0,0,0,0.1)";
+        ctx.beginPath();
+        if(gender === 'FEMALE') {
+             ctx.moveTo(x + w/2 - 5, y + bob); 
+             ctx.quadraticCurveTo(x + w/2 + 5, y + h/2 + bob, x + w/2 + 8, y + h + bob);
+             ctx.lineTo(x + 5, y + h + 2 + bob);
+             ctx.lineTo(x + 5, y + bob);
+        } else {
+             ctx.roundRect(x, y + bob, w/2, h, {TOP_RIGHT:15, BOTTOM_RIGHT:15, BOTTOM_LEFT:0, TOP_LEFT:0});
+        }
+        ctx.fill();
+
+        // --- OUTFIT DETAILS ---
+        if(gender === 'MALE') {
+            // Shirt V
+            ctx.fillStyle = "white";
+            ctx.beginPath(); ctx.moveTo(x, y + 25 + bob); ctx.lineTo(x - 8, y + 10 + bob); ctx.lineTo(x + 8, y + 10 + bob); ctx.fill();
+            // Tie
+            ctx.strokeStyle = isPlayer ? "#e74c3c" : "#3498db";
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(x, y + 10 + bob); ctx.lineTo(x, y + 25 + bob); ctx.stroke();
+        } else {
+            // Pearl Necklace
+            ctx.fillStyle = "white";
+            ctx.beginPath(); ctx.arc(x, y + 12 + bob, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x-5, y + 10 + bob, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x+5, y + 10 + bob, 2, 0, Math.PI*2); ctx.fill();
         }
 
-        // Face
-        ctx.fillStyle="black"; ctx.strokeStyle="black"; ctx.lineWidth=2;
-        if(emotion === 'ANGRY') {
-            ctx.beginPath(); ctx.moveTo(x-6, y-8+bob); ctx.lineTo(x-2, y-6+bob); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x+6, y-8+bob); ctx.lineTo(x+2, y-6+bob); ctx.stroke();
-            ctx.beginPath(); ctx.arc(x, y+2+bob, 4, Math.PI, 0); ctx.stroke();
-        } else {
-            ctx.beginPath(); ctx.arc(x-4, y-5+bob, 2, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(x+4, y-5+bob, 2, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y-2+bob, 6, 0, Math.PI); ctx.stroke();
-        }
+        // --- FACE (Chibi Style) ---
+        const eyeY = y + 15 + bob;
+        ctx.fillStyle = "black";
         
+        if(emotion === 'ANGRY') {
+            // Angry Eyebrows
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x - 10, eyeY - 4); ctx.lineTo(x - 2, eyeY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x + 10, eyeY - 4); ctx.lineTo(x + 2, eyeY); ctx.stroke();
+            // Eyes
+            ctx.beginPath(); ctx.arc(x - 6, eyeY + 2, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 6, eyeY + 2, 3, 0, Math.PI*2); ctx.fill();
+            // Mouth
+            ctx.beginPath(); ctx.arc(x, eyeY + 10, 4, Math.PI, 0); ctx.stroke();
+        } else {
+            // Happy Eyes
+            ctx.beginPath(); ctx.arc(x - 7, eyeY, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 7, eyeY, 3, 0, Math.PI*2); ctx.fill();
+            // Smile
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x, eyeY + 4, 4, 0, Math.PI); ctx.stroke();
+        }
+
+        // Mustache
         if(hasMustache) {
-            ctx.lineWidth=2; ctx.strokeStyle="black";
-            ctx.beginPath(); ctx.moveTo(x-6, y-2+bob); ctx.quadraticCurveTo(x, y-6+bob, x+6, y-2+bob); ctx.stroke();
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(x - 8, eyeY + 8); ctx.quadraticCurveTo(x, eyeY + 4, x + 8, eyeY + 8); ctx.stroke();
         }
     },
 
     drawPlayer: function(p) {
         const bob = Math.sin(p.frame)*4;
-        this.drawAvatar(p.x+15, p.y+15, "#0984e3", 'MALE', p.frame, true, false, 'HAPPY'); 
+        // Shadow
+        this.ctx.fillStyle="rgba(0,0,0,0.2)"; this.ctx.beginPath(); this.ctx.ellipse(p.x+15, p.y+45, 18, 6, 0, 0, Math.PI*2); this.ctx.fill();
+        
+        this.drawMeeple(p.x+15, p.y, "#0984e3", 'MALE', p.frame, true, false, 'HAPPY'); 
 
         if(p.stun>0) { this.ctx.font = "30px Arial"; this.ctx.fillText("💫", p.x, p.y-20); }
 
@@ -465,7 +507,7 @@ const Game = {
             const ctx = this.ctx;
             ctx.beginPath(); ctx.moveTo(p.x+15, p.y-10+bob); ctx.lineTo(p.x+35, p.y-50+bob); ctx.lineWidth=3; ctx.strokeStyle="black"; ctx.stroke();
             this.circle(p.x+40, p.y-60+bob, 30, "white");
-            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(p.holding.icon, p.x+40, p.y-65+bob);
+            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(p.holding.icon, p.x+40, p.y-48+bob);
         }
     },
 
@@ -478,17 +520,17 @@ const Game = {
         if(!isGoldman) col = c.gender === 'MALE' ? "#74b9ff" : "#fab1a0";
 
         const emotion = c.state === 'CHAD' ? 'ANGRY' : 'HAPPY';
-        this.drawAvatar(c.x, c.y, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'), emotion);
+        this.drawMeeple(c.x+20, c.y, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'), emotion);
 
         if(c.state==='CHAD') {
             ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(c.cooldown>0?"💤":"🤬", c.x, c.y-50+bob);
         } else {
-            ctx.beginPath(); ctx.moveTo(c.x, c.y-30+bob); ctx.lineTo(c.x+30, c.y-60+bob); ctx.stroke();
-            this.circle(c.x+40, c.y-65+bob, 30, "white");
-            ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.textAlign="center"; ctx.fillText(c.task.icon, c.x+40, c.y-52+bob);
+            ctx.beginPath(); ctx.moveTo(c.x+20, c.y-10+bob); ctx.lineTo(c.x+50, c.y-60+bob); ctx.lineWidth=3; ctx.strokeStyle="black"; ctx.stroke();
+            this.circle(c.x+60, c.y-65+bob, 30, "white");
+            ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.textAlign="center"; ctx.fillText(c.task.icon, c.x+60, c.y-52+bob);
             
-            ctx.fillStyle="white"; ctx.fillRect(c.x-25, c.y+55, 50, 10); ctx.strokeRect(c.x-25, c.y+55, 50, 10);
-            ctx.fillStyle=c.patience<30?"red":"#00b894"; ctx.fillRect(c.x-23, c.y+57, 46*(c.patience/100), 6);
+            ctx.fillStyle="white"; ctx.fillRect(c.x-5, c.y+60, 50, 10); ctx.strokeRect(c.x-5, c.y+60, 50, 10);
+            ctx.fillStyle=c.patience<30?"red":"#00b894"; ctx.fillRect(c.x-3, c.y+62, 46*(c.patience/100), 6);
         }
     }
 };
