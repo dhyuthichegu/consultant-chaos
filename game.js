@@ -1,6 +1,6 @@
 /**
- * CONSULTING CHAOS V11.4
- * Final Visual Polish: Meeples, Coffee Station, Fixed UI
+ * CONSULTING CHAOS V11.5
+ * Dynamic Facial Expressions + Polished Visuals
  */
 
 // --- CONFIG ---
@@ -94,8 +94,7 @@ const Game = {
             const cols = this.state.level === 1 ? 3 : 4;
             const w = this.state.level === 1 ? 220 : 180;
             const sx = this.state.level === 1 ? 80 : 60;
-            // UI FIX: Move StartY down to 120
-            const sy = 120; 
+            const sy = 120; // Fixed UI overlap
 
             for(let r=0; r<2; r++) {
                 for(let c=0; c<cols; c++) {
@@ -250,11 +249,9 @@ const Game = {
             y: this.deskY+40, w:40, h:40,
             task: task, patience: 100, state: 'WAITING', attackTimer: 0, cooldown: 0, frame: 0,
             gender: isMale ? 'MALE' : 'FEMALE',
-            // Random Hair
-            hairColor: ['#634a36', '#2d3436', '#e1b12c', '#d35400'][Math.floor(Math.random()*4)],
-            // Random Suit/Dress Color
+            hairColor: ['#634a36', '#2d3436', '#e1b12c'][Math.floor(Math.random()*3)],
             suitColor: isMale ? ['#2d3436', '#636e72', '#0984e3'][Math.floor(Math.random()*3)] : 
-                                ['#e84393', '#fd79a8', '#6c5ce7', '#00b894'][Math.floor(Math.random()*4)]
+                                ['#e84393', '#fd79a8', '#6c5ce7'][Math.floor(Math.random()*3)]
         });
         AUDIO.vine();
     },
@@ -320,7 +317,7 @@ const Game = {
         this.ctx.stroke();
     },
 
-    // --- NEW DRAWING ENGINE ---
+    // --- DRAWING ENGINE ---
 
     draw: function() {
         const ctx = this.ctx;
@@ -331,7 +328,7 @@ const Game = {
 
         this.splats.forEach(s => { ctx.fillStyle="rgba(101,67,33,0.5)"; ctx.beginPath(); ctx.ellipse(s.x, s.y, 30, 20, 0, 0, Math.PI*2); ctx.fill(); });
 
-        this.drawPlant(10, 300); this.drawPlant(910, 300); // Fixed Layout
+        this.drawPlant(10, 300); this.drawPlant(910, 300);
 
         this.map.forEach(c => this.drawCubicle(c));
         ctx.fillStyle="#57606f"; ctx.fillRect(0, this.deskY, 960, 20);
@@ -366,7 +363,7 @@ const Game = {
         ctx.lineWidth=4; ctx.strokeStyle="black"; ctx.strokeRect(c.x, c.y, c.w, c.h);
 
         if(c.task.id === 'coffee') {
-            // COFFEE STATION (Fixed Visual)
+            // COFFEE STATION
             ctx.fillStyle = "#636e72"; ctx.fillRect(c.x+10, c.y+40, c.w-20, 50); ctx.strokeRect(c.x+10, c.y+40, c.w-20, 50);
             ctx.fillStyle = "#2d3436"; ctx.fillRect(c.x+30, c.y+10, 40, 50); ctx.strokeRect(c.x+30, c.y+10, 40, 50);
             ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.beginPath(); ctx.arc(c.x+50, c.y+45, 12, 0, Math.PI*2); ctx.fill(); ctx.stroke();
@@ -381,7 +378,10 @@ const Game = {
             ctx.fillRect(c.x + 20, c.y + 20, c.w - 40, 50); ctx.strokeRect(c.x + 20, c.y + 20, c.w - 40, 50);
             ctx.fillRect(c.x + c.w - 60, c.y + 20, 40, c.h - 40); ctx.strokeRect(c.x + c.w - 60, c.y + 20, 40, c.h - 40);
             ctx.fillStyle = "#ced6e0";
-            this.rect(c.x, c.y, 15, c.h, "#ced6e0"); this.rect(c.x + c.w - 15, c.y, 15, c.h, "#ced6e0"); this.rect(c.x, c.y, c.w, 15, "#ced6e0");
+            this.rect(c.x, c.y, 15, c.h, "#ced6e0");
+            this.rect(c.x + c.w - 15, c.y, 15, c.h, "#ced6e0");
+            this.rect(c.x, c.y, c.w, 15, "#ced6e0");
+
             this.rect(c.x + 40, c.y + 10, 60, 40, "#2f3640");
             ctx.fillStyle = "#3498db"; ctx.fillRect(c.x + 45, c.y + 15, 50, 30);
             this.rect(c.x + 50, c.y + 55, 40, 10, "#dcdde1");
@@ -401,35 +401,33 @@ const Game = {
         this.circle(x+20, y+10, 25, "#00b894"); 
     },
 
-    drawAvatar: function(x, y, color, gender, frame, isPlayer, hasMustache) {
+    drawAvatar: function(x, y, color, gender, frame, isPlayer, hasMustache, emotion) {
         const ctx = this.ctx;
         const bob = Math.sin(frame)*3;
         
-        // Legs (Clean Lines)
+        // Legs
         ctx.strokeStyle="black"; ctx.lineWidth=4; ctx.lineCap="round";
         const step = Math.sin(frame*0.8) * 6;
         ctx.beginPath(); ctx.moveTo(x-8, y+20); ctx.lineTo(x-8, y+45+step); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x+8, y+20); ctx.lineTo(x+8, y+45-step); ctx.stroke();
 
         if (gender === 'FEMALE') {
-            // DRESS (Trapezoid)
+            // DRESS
             ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(x-12, y+5+bob); ctx.lineTo(x+12, y+5+bob); ctx.lineTo(x+18, y+35+bob); ctx.lineTo(x-18, y+35+bob);
+            ctx.beginPath(); ctx.moveTo(x-12, y+5+bob); ctx.lineTo(x+12, y+5+bob); ctx.lineTo(x+18, y+35+bob); ctx.lineTo(x-18, y+35+bob);
             ctx.closePath(); ctx.fill(); ctx.stroke();
         } else {
-            // SUIT (Rounded Rect)
+            // SUIT
             ctx.fillStyle = color;
             ctx.beginPath(); ctx.roundRect(x-14, y+5+bob, 28, 30, 5); ctx.fill(); ctx.stroke();
-            // Shirt V
             ctx.fillStyle="white"; ctx.beginPath(); ctx.moveTo(x-6, y+5+bob); ctx.lineTo(x+6, y+5+bob); ctx.lineTo(x, y+18+bob); ctx.fill();
-            // Tie
             ctx.strokeStyle = isPlayer ? "red" : "blue"; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(x, y+5+bob); ctx.lineTo(x, y+22+bob); ctx.stroke();
         }
 
         // Head
-        ctx.fillStyle = "#ffeaa7"; ctx.beginPath(); ctx.arc(x, y-5+bob, 14, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
+        ctx.beginPath(); ctx.arc(x, y-5+bob, 14, 0, Math.PI*2); ctx.fill(); ctx.stroke();
         
         // Hair
         ctx.fillStyle = gender === 'FEMALE' ? "#e1b12c" : "#634a36";
@@ -440,9 +438,16 @@ const Game = {
         }
 
         // Face
-        ctx.fillStyle="black";
-        ctx.beginPath(); ctx.arc(x-4, y-5+bob, 2, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x+4, y-5+bob, 2, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle="black"; ctx.strokeStyle="black"; ctx.lineWidth=2;
+        if(emotion === 'ANGRY') {
+            ctx.beginPath(); ctx.moveTo(x-6, y-8+bob); ctx.lineTo(x-2, y-6+bob); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x+6, y-8+bob); ctx.lineTo(x+2, y-6+bob); ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y+2+bob, 4, Math.PI, 0); ctx.stroke();
+        } else {
+            ctx.beginPath(); ctx.arc(x-4, y-5+bob, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x+4, y-5+bob, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y-2+bob, 6, 0, Math.PI); ctx.stroke();
+        }
         
         if(hasMustache) {
             ctx.lineWidth=2; ctx.strokeStyle="black";
@@ -452,7 +457,7 @@ const Game = {
 
     drawPlayer: function(p) {
         const bob = Math.sin(p.frame)*4;
-        this.drawAvatar(p.x+15, p.y+15, "#0984e3", 'MALE', p.frame, true, false); 
+        this.drawAvatar(p.x+15, p.y+15, "#0984e3", 'MALE', p.frame, true, false, 'HAPPY'); 
 
         if(p.stun>0) { this.ctx.font = "30px Arial"; this.ctx.fillText("💫", p.x, p.y-20); }
 
@@ -460,7 +465,7 @@ const Game = {
             const ctx = this.ctx;
             ctx.beginPath(); ctx.moveTo(p.x+15, p.y-10+bob); ctx.lineTo(p.x+35, p.y-50+bob); ctx.lineWidth=3; ctx.strokeStyle="black"; ctx.stroke();
             this.circle(p.x+40, p.y-60+bob, 30, "white");
-            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(p.holding.icon, p.x+40, p.y-48+bob);
+            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(p.holding.icon, p.x+40, p.y-65+bob);
         }
     },
 
@@ -470,9 +475,10 @@ const Game = {
         const isGoldman = this.state.level >= 2;
         let col = c.state==='CHAD'?"#e17055": c.suitColor;
         
-        if(!isGoldman) col = c.gender === 'MALE' ? "#74b9ff" : "#fab1a0"; // Casual L1
+        if(!isGoldman) col = c.gender === 'MALE' ? "#74b9ff" : "#fab1a0";
 
-        this.drawAvatar(c.x, c.y, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'));
+        const emotion = c.state === 'CHAD' ? 'ANGRY' : 'HAPPY';
+        this.drawAvatar(c.x, c.y, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'), emotion);
 
         if(c.state==='CHAD') {
             ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(c.cooldown>0?"💤":"🤬", c.x, c.y-50+bob);
