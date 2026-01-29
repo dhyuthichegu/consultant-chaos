@@ -1,5 +1,5 @@
 /**
- * CONSULTING CHAOS V11.1
+ * CONSULTING CHAOS V11.2
  * Level 2 Expansion + Detailed Visuals & Avatar Customization
  */
 
@@ -244,6 +244,7 @@ const Game = {
     },
 
     spawnClient: function() {
+        // Only pick from active map tasks
         const validTasks = this.map.map(m => m.task);
         const task = validTasks[Math.floor(Math.random() * validTasks.length)];
         const isMale = Math.random() > 0.5;
@@ -253,7 +254,7 @@ const Game = {
             y: this.deskY+40, w:40, h:40,
             task: task, patience: 100, state: 'WAITING', attackTimer: 0, cooldown: 0, frame: 0,
             gender: isMale ? 'MALE' : 'FEMALE',
-            hairColor: ['#634a36', '#2d3436', '#e1b12c'][Math.floor(Math.random()*3)], 
+            hairColor: ['#634a36', '#2d3436', '#e1b12c'][Math.floor(Math.random()*3)], // Brown, Black, Blonde
             suitColor: isMale ? ['#2d3436', '#636e72', '#0984e3'][Math.floor(Math.random()*3)] : ['#e84393', '#fd79a8', '#6c5ce7'][Math.floor(Math.random()*3)]
         });
         AUDIO.vine();
@@ -318,13 +319,16 @@ const Game = {
     draw: function() {
         const ctx = this.ctx;
         ctx.clearRect(0,0,960,640);
-        ctx.fillStyle="#f5f6fa"; ctx.fillRect(0,0,960,640);
-        ctx.strokeStyle="#e1e1e1"; ctx.lineWidth=2;
+        
+        // Floor
+        ctx.fillStyle = "#f5f6fa"; ctx.fillRect(0,0,960,640);
+        ctx.strokeStyle = "#e1e1e1"; ctx.lineWidth = 2;
         for(let i=0; i<960; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,640); ctx.stroke(); }
-
+        
         this.splats.forEach(s => { ctx.fillStyle="rgba(101,67,33,0.5)"; ctx.beginPath(); ctx.ellipse(s.x, s.y, 30, 20, 0, 0, Math.PI*2); ctx.fill(); });
 
-        this.drawPlant(20, 300); this.drawPlant(900, 300);
+        // Plants (Moved outwards)
+        this.drawPlant(10, 300); this.drawPlant(910, 300);
 
         this.map.forEach(c => this.drawCubicle(c));
         ctx.fillStyle="#57606f"; ctx.fillRect(0, this.deskY, 960, 20);
@@ -339,6 +343,7 @@ const Game = {
         });
 
         this.drawPlayer(this.player);
+        // ... (particles/warning stay same) ...
         this.particles.forEach((p,i) => {
             ctx.fillStyle=p.c; ctx.font="40px Arial"; ctx.fillText(p.t, p.x, p.y);
             p.y--; p.life--; if(p.life<=0) this.particles.splice(i,1);
@@ -351,32 +356,47 @@ const Game = {
     },
 
     drawCubicle: function(c) {
-        const ctx=this.ctx;
-        ctx.fillStyle=c.task.color; ctx.fillRect(c.x, c.y, c.w, c.h);
-        ctx.lineWidth=4; ctx.strokeStyle="black"; ctx.strokeRect(c.x, c.y, c.w, c.h);
+        const ctx = this.ctx;
         
-        // Desk
-        ctx.fillStyle="#e58e26"; 
-        ctx.fillRect(c.x+20, c.y+20, c.w-40, 50); ctx.strokeRect(c.x+20, c.y+20, c.w-40, 50);
-        ctx.fillRect(c.x+c.w-60, c.y+20, 40, c.h-40); ctx.strokeRect(c.x+c.w-60, c.y+20, 40, c.h-40);
+        // Floor (Color Coded!)
+        ctx.fillStyle = c.task.color; 
+        ctx.fillRect(c.x, c.y, c.w, c.h);
+        ctx.lineWidth=4; ctx.strokeStyle="black"; ctx.strokeRect(c.x, c.y, c.w, c.h);
 
-        // Walls
-        ctx.fillStyle="#ced6e0";
-        this.rect(c.x, c.y, 15, c.h, "#ced6e0");
-        this.rect(c.x+c.w-15, c.y, 15, c.h, "#ced6e0");
-        this.rect(c.x, c.y, c.w, 15, "#ced6e0");
+        if(c.task.id === 'coffee') {
+            // COFFEE STATION
+            ctx.fillStyle = "#8d6e63"; // Dark Wood Table
+            ctx.fillRect(c.x+20, c.y+40, c.w-40, 60); ctx.strokeRect(c.x+20, c.y+40, c.w-40, 60);
+            
+            // Coffee Pot
+            ctx.fillStyle = "#dfe6e9"; // Silver
+            ctx.beginPath(); ctx.moveTo(c.x+60, c.y+40); ctx.lineTo(c.x+90, c.y+40); ctx.lineTo(c.x+100, c.y+80); ctx.lineTo(c.x+50, c.y+80); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "black"; ctx.fillRect(c.x+55, c.y+45, 40, 20); // Glass/Coffee
+        } else {
+            // STANDARD CUBICLE
+            ctx.fillStyle = "#e58e26"; // Desk
+            ctx.fillRect(c.x + 20, c.y + 20, c.w - 40, 50); ctx.strokeRect(c.x + 20, c.y + 20, c.w - 40, 50);
+            ctx.fillRect(c.x + c.w - 60, c.y + 20, 40, c.h - 40); ctx.strokeRect(c.x + c.w - 60, c.y + 20, 40, c.h - 40);
 
-        // Props
-        this.rect(c.x+40, c.y+10, 60, 40, "#2f3640");
-        ctx.fillStyle="#3498db"; ctx.fillRect(c.x+45, c.y+15, 50, 30);
-        this.rect(c.x+50, c.y+55, 40, 10, "#dcdde1");
-        this.rect(c.x+c.w-50, c.y+80, 25, 30, "white");
-        this.circle(c.x+80, c.y+100, 18, "#2f3640");
+            // Walls
+            ctx.fillStyle = "#ced6e0";
+            this.rect(c.x, c.y, 15, c.h, "#ced6e0");
+            this.rect(c.x + c.w - 15, c.y, 15, c.h, "#ced6e0");
+            this.rect(c.x, c.y, c.w, 15, "#ced6e0");
 
-        if(this.state.phase==='MEMORIZE') {
-            ctx.fillStyle="rgba(255,255,255,0.8)"; ctx.fillRect(c.x+20, c.y+80, c.w-40, 60);
-            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center";
-            ctx.fillText(c.task.icon, c.x+c.w/2-20, c.y+120);
+            // Props
+            this.rect(c.x + 40, c.y + 10, 60, 40, "#2f3640"); // Monitor
+            ctx.fillStyle = "#3498db"; ctx.fillRect(c.x + 45, c.y + 15, 50, 30); // Screen
+            this.rect(c.x + 50, c.y + 55, 40, 10, "#dcdde1"); // Keyboard
+            this.rect(c.x + c.w - 50, c.y + 80, 25, 30, "white"); // Papers
+            this.circle(c.x + 80, c.y + 100, 18, "#2f3640"); // Chair
+        }
+
+        // Label
+        if(this.state.phase === 'MEMORIZE') {
+            ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(c.x+20, c.y+80, c.w-80, 60);
+            ctx.fillStyle = "white"; ctx.font = "40px Arial"; ctx.textAlign = "center";
+            ctx.fillText(c.task.icon, c.x + 80, c.y + 120);
         }
     },
 
@@ -395,33 +415,29 @@ const Game = {
     drawPlayer: function(p) {
         const ctx=this.ctx; const bob=Math.sin(p.frame)*4;
         const m = (this.keys['w']||this.keys['a']||this.keys['s']||this.keys['d']);
-        const isGoldman = this.state.level >= 2;
         
-        this.drawLegs(p.x, p.y+bob, p.frame, m);
+        // Shadow
+        ctx.fillStyle="rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.ellipse(p.x, p.y+45, 20, 8, 0, 0, Math.PI*2); ctx.fill();
         
-        let suit = isGoldman ? "#2d3436" : "#0984e3";
-        this.circle(p.x, p.y+25+bob, 18, suit);
-        // Shirt Triangle
+        this.drawLegs(p.x, p.y+bob, "#0984e3", p.frame, m);
+        
+        // Body (Blue Suit)
+        this.circle(p.x, p.y+25+bob, 18, "#0984e3");
+        // White Shirt Triangle
         ctx.fillStyle="white"; ctx.beginPath(); ctx.moveTo(p.x-5, p.y+15+bob); ctx.lineTo(p.x+5, p.y+15+bob); ctx.lineTo(p.x, p.y+25+bob); ctx.fill();
         // Red Tie
         ctx.strokeStyle="red"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(p.x, p.y+15+bob); ctx.lineTo(p.x, p.y+35+bob); ctx.stroke();
 
         this.circle(p.x, p.y+bob, 22, "#ffeaa7");
-        ctx.fillStyle="#634a36"; ctx.beginPath(); ctx.arc(p.x, p.y+bob-5, 22, Math.PI, 0); ctx.fill(); // Hair
+        ctx.fillStyle="#634a36"; ctx.beginPath(); ctx.arc(p.x, p.y+bob-5, 22, Math.PI, 0); ctx.fill();
         
         ctx.fillStyle="black";
-        ctx.beginPath(); ctx.arc(p.x-8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill(); 
-        ctx.beginPath(); ctx.arc(p.x+8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
-
-        if(isGoldman) { // Mustache
-            ctx.lineWidth=2; ctx.strokeStyle="black";
-            ctx.beginPath(); ctx.moveTo(p.x-10, p.y+bob+5); ctx.quadraticCurveTo(p.x, p.y+bob-5, p.x+10, p.y+bob+5); ctx.stroke();
-        }
+        ctx.beginPath(); ctx.arc(p.x-8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(p.x+8, p.y+bob-5, 3, 0, Math.PI*2); ctx.fill();
 
         if(p.holding) {
-            ctx.beginPath(); ctx.moveTo(p.x, p.y-30+bob); ctx.lineTo(p.x+30, p.y-70+bob); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p.x, p.y-30+bob); ctx.lineTo(p.x+30, p.y-70+bob); ctx.lineWidth=4; ctx.strokeStyle="black"; ctx.stroke();
             this.circle(p.x+40, p.y-80+bob, 35, "white");
-            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(p.holding.icon, p.x+40, p.y-65+bob);
+            ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.textAlign="center"; ctx.fillText(p.holding.icon, p.x+40, p.y-65+bob); // CENTERED
         }
     },
 
@@ -430,7 +446,14 @@ const Game = {
         const isGoldman = this.state.level >= 2;
         let col = c.state==='CHAD'?"#e17055": c.suitColor;
         
-        this.drawLegs(c.x, c.y+bob, this.state.frame, false);
+        // Use casual colors for L1
+        if(!isGoldman) {
+            // Casual color logic
+            if(c.gender === 'MALE') col = "#0984e3"; 
+            else col = "#e84393"; 
+        }
+
+        this.drawLegs(c.x, c.y+bob, col, this.state.frame, false);
         this.circle(c.x, c.y+25+bob, 18, col);
         this.circle(c.x, c.y+bob, 22, c.state==='CHAD'?"#ffcccc":"#ffeaa7");
 
@@ -452,7 +475,7 @@ const Game = {
         }
 
         if(isGoldman && c.gender==='MALE' && c.state!=='CHAD') {
-            ctx.lineWidth=2; ctx.strokeStyle="black";
+            ctx.lineWidth=3; ctx.strokeStyle="black"; // THICKER
             ctx.beginPath(); ctx.moveTo(c.x-10, c.y+bob+5); ctx.quadraticCurveTo(c.x, c.y+bob-5, c.x+10, c.y+bob+5); ctx.stroke();
         }
 
@@ -461,7 +484,7 @@ const Game = {
         } else {
             ctx.beginPath(); ctx.moveTo(c.x, c.y-30+bob); ctx.lineTo(c.x+30, c.y-60+bob); ctx.stroke();
             this.circle(c.x+40, c.y-65+bob, 30, "white");
-            ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.fillText(c.task.icon, c.x+25, c.y-52+bob);
+            ctx.fillStyle="black"; ctx.font="35px Arial"; ctx.fillText(c.task.icon, c.x+40, c.y-52+bob); // CENTERED
             
             ctx.fillStyle="white"; ctx.fillRect(c.x-25, c.y+55, 50, 10); ctx.strokeRect(c.x-25, c.y+55, 50, 10);
             ctx.fillStyle=c.patience<30?"red":"#00b894"; ctx.fillRect(c.x-23, c.y+57, 46*(c.patience/100), 6);
