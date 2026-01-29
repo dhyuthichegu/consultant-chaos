@@ -28,12 +28,14 @@ const Game = {
     // ... (init code stays same) ...
 
     startPhase: function(phase) {
-        // Set Company Name
+        // Update Title based on Level
         const company = this.state.level === 1 ? "Deloitte (Monday)" : "Goldman Sachs (Tuesday)";
-        document.getElementById('ui-level').innerText = company;
+        const titleEl = document.getElementById('ui-level');
+        if(titleEl) titleEl.innerText = company;
 
         if(phase === 'MEMORIZE') {
             document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('level-screen').classList.add('hidden'); // Ensure level screen is gone
             document.getElementById('memory-overlay').classList.remove('hidden');
             
             // Map Gen
@@ -45,29 +47,76 @@ const Game = {
             tasks.sort(() => Math.random() - 0.5);
 
             const cols = this.state.level === 1 ? 3 : 4;
-            const width = this.state.level === 1 ? 220 : 180; // Smaller cubicles for L2
+            const width = this.state.level === 1 ? 220 : 180; 
             const startX = this.state.level === 1 ? 80 : 60;
 
             for(let row=0; row<2; row++) {
                 for(let col=0; col<cols; col++) {
-                    this.map.push({
-                        x: startX + (col * (width + 40)),
-                        y: 80 + (row * 240),
-                        w: width, h: 160,
-                        task: tasks.shift()
-                    });
+                    const task = tasks.shift();
+                    if(task) {
+                        this.map.push({
+                            x: startX + (col * (width + 40)),
+                            y: 80 + (row * 240),
+                            w: width, h: 160,
+                            task: task
+                        });
+                    }
                 }
             }
 
             // Legend
             const lg = document.getElementById('legend-display');
-            lg.innerHTML = '';
-            this.map.forEach(c => {
-                lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`;
-            });
-            // ... (Timer/Skip logic stays same) ...
+            if(lg) {
+                lg.innerHTML = '';
+                // Adjust grid for L2
+                lg.style.gridTemplateColumns = this.state.level === 1 ? "1fr 1fr 1fr" : "1fr 1fr 1fr 1fr";
+                
+                this.map.forEach(c => {
+                    lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`;
+                });
+            }
+
+            // Skip Button (Safety check)
+            if(!document.getElementById('btn-skip')) {
+                const btn = document.createElement('button');
+                btn.id = 'btn-skip';
+                btn.className = 'btn';
+                btn.innerText = "SKIP TIMER ⏭️";
+                btn.style.marginTop = "20px";
+                btn.onclick = () => Game.skipMemory();
+                document.getElementById('memory-overlay').appendChild(btn);
+            }
+
+            // Timer
+            let t = 20;
+            const el = document.getElementById('timer-big');
+            if(this.tInt) clearInterval(this.tInt); // Clear existing
+            this.tInt = setInterval(() => {
+                t--; 
+                if(el) el.innerText = t;
+                if(t<=0) { clearInterval(this.tInt); this.startPhase('PLAYING'); }
+            }, 1000);
+            
+            this.state.phase = 'MEMORIZE';
         }
-        // ... (PLAYING phase logic stays same) ...
+
+        if(phase === 'PLAYING') {
+            AUDIO.playBGM();
+            document.getElementById('memory-overlay').classList.add('hidden');
+            document.getElementById('level-screen').classList.add('hidden');
+            
+            this.state.phase = 'PLAYING';
+            this.state.score = 0;
+            this.state.sanity = 100;
+            this.player.holding = null;
+            this.player.stun = 0;
+            this.clients = [];
+            this.projectiles = [];
+            this.splats = [];
+            this.state.goal = 1 + this.state.level;
+            
+            this.spawnClient();
+        }
     },
 
     // ... (Loop, Update, Physics stay same) ...
