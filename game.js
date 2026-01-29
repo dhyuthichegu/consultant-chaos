@@ -1,6 +1,6 @@
 /**
- * CONSULTING CHAOS V12.5
- * "OverSimplified" Art Style + Fixed Layout & Scrolling
+ * CONSULTING CHAOS V12.6
+ * Final OverSimplified Style + Layout Fixes
  */
 
 // --- CONFIG ---
@@ -55,7 +55,7 @@ const Game = {
     clients: [], projectiles: [], splats: [], particles: [], steam: [],
     
     // Layout Config
-    deskY: 560, // Moved Down to create space
+    deskY: 560, 
     trashBin: { x: 880, y: 580, w: 60, h: 80 },
 
     init: function() {
@@ -65,7 +65,6 @@ const Game = {
         if(s) this.state.highScore = parseInt(s);
         
         this.keys = {};
-        // SCROLL BLOCKER
         window.addEventListener('keydown', e => {
             if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
             this.keys[e.key] = true;
@@ -98,12 +97,12 @@ const Game = {
             const cols = this.state.level === 1 ? 3 : 4;
             const w = this.state.level === 1 ? 220 : 180;
             const sx = this.state.level === 1 ? 80 : 60;
-            const sy = 100; // Moved UP to fix UI overlap
+            const sy = 130; // Moved UP to fix UI overlap
 
             for(let r=0; r<2; r++) {
                 for(let c=0; c<cols; c++) {
                     const t = tasks.shift();
-                    if(t) this.map.push({ x: sx + (c*(w+40)), y: sy + (r*240), w: w, h: 160, task: t });
+                    if(t) this.map.push({ x: sx + (c*(w+40)), y: sy + (r*240), w: w, h: 150, task: t }); // Height 150
                 }
             }
 
@@ -113,8 +112,6 @@ const Game = {
                 lg.style.gridTemplateColumns = this.state.level === 1 ? "1fr 1fr 1fr" : "1fr 1fr 1fr 1fr";
                 this.map.forEach(c => lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`);
             }
-
-            // Removed dynamic button creation logic (Button is static in HTML)
 
             let t = 20;
             const el = document.getElementById('timer-big');
@@ -427,11 +424,7 @@ const Game = {
         const ctx = this.ctx;
         const bob = Math.sin(frame)*3;
         
-        // --- SHADOW (Fixed) ---
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.beginPath(); ctx.ellipse(x, y+55, 15, 5, 0, 0, Math.PI*2); ctx.fill();
-
-        // --- LEGS ---
+        // --- LEGS (Stick legs, classic OverSimplified) ---
         ctx.strokeStyle="black"; ctx.lineWidth=3; ctx.lineCap="round";
         const step = Math.sin(frame*0.8) * 6;
         ctx.beginPath(); ctx.moveTo(x-5, y+35); ctx.lineTo(x-5, y+50+step); ctx.stroke();
@@ -442,63 +435,64 @@ const Game = {
         ctx.lineWidth = 3;
         ctx.beginPath();
         if (gender === 'FEMALE') {
-            // Dress
-            ctx.moveTo(x, y+10+bob); 
-            ctx.quadraticCurveTo(x-15, y+15+bob, x-15, y+40+bob); 
-            ctx.lineTo(x+15, y+40+bob); 
-            ctx.quadraticCurveTo(x+15, y+15+bob, x, y+10+bob); 
+            // Dress (Bell Shape)
+            ctx.moveTo(x, y+10+bob); // Neck center
+            ctx.quadraticCurveTo(x-15, y+15+bob, x-15, y+40+bob); // Left curve
+            ctx.lineTo(x+15, y+40+bob); // Bottom
+            ctx.quadraticCurveTo(x+15, y+15+bob, x, y+10+bob); // Right curve
         } else {
-            // Suit (Bell)
-            ctx.moveTo(x-12, y+40+bob); ctx.lineTo(x+12, y+40+bob); // Bottom
-            ctx.quadraticCurveTo(x+12, y+10+bob, x, y+10+bob); // Right to Neck
-            ctx.quadraticCurveTo(x-12, y+10+bob, x-12, y+40+bob); // Left to Bottom
+            // Suit (Rounded Rect)
+            ctx.roundRect(x-12, y+10+bob, 24, 30, 5);
         }
         ctx.fill(); ctx.stroke();
 
         // --- OUTFIT DETAILS ---
         if(gender === 'MALE') {
-            // Shirt V
+            // White Shirt Triangle
             ctx.fillStyle="white";
-            ctx.beginPath(); ctx.moveTo(x, y+30+bob); ctx.lineTo(x-5, y+10+bob); ctx.lineTo(x+5, y+10+bob); ctx.fill();
-            // Tie
+            ctx.beginPath(); ctx.moveTo(x, y+25+bob); ctx.lineTo(x-5, y+10+bob); ctx.lineTo(x+5, y+10+bob); ctx.fill();
+            // Tie (Thin Line)
             ctx.strokeStyle = isPlayer ? "#e74c3c" : "#2980b9";
             ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x, y+10+bob); ctx.lineTo(x, y+30+bob); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x, y+10+bob); ctx.lineTo(x, y+25+bob); ctx.stroke();
         }
 
-        // --- HEAD ---
-        const skinColor = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
-        ctx.fillStyle = skinColor;
+        // --- HEAD (Large Circle) ---
+        ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7"; // Skin
         ctx.beginPath(); ctx.arc(x, y-2+bob, 24, 0, Math.PI*2); ctx.fill(); 
         ctx.lineWidth = 3; ctx.strokeStyle="black"; ctx.stroke();
 
-        // --- HAIR ---
+        // --- HAIR (Simple Shapes) ---
         ctx.fillStyle = gender === 'FEMALE' ? "#e1b12c" : "#634a36";
         if(!isPlayer) {
              const hCol = ['#634a36', '#2d3436', '#e1b12c', '#d35400'][Math.floor(x/100)%4];
              ctx.fillStyle = hCol;
         }
 
-        if (gender === 'FEMALE') {
-            // Long Hair (Back)
-            ctx.globalCompositeOperation = 'destination-over';
-            ctx.beginPath(); ctx.arc(x, y-2+bob, 26, Math.PI, 0); ctx.lineTo(x+26, y+25+bob); ctx.lineTo(x-26, y+25+bob); ctx.fill(); ctx.stroke();
-            ctx.globalCompositeOperation = 'source-over';
+        if(gender === 'FEMALE') {
+            // Long Hair (Behind head logic visual trick)
+            ctx.beginPath(); ctx.arc(x, y-2+bob, 26, Math.PI, 0); ctx.lineTo(x+26, y+20+bob); ctx.lineTo(x-26, y+20+bob); ctx.fill(); ctx.stroke();
+            // Redraw face to cover front hair
+            ctx.fillStyle = emotion === 'ANGRY' ? "#ffcccc" : "#ffeaa7";
+            ctx.beginPath(); ctx.arc(x, y-2+bob, 24, 0, Math.PI*2); ctx.fill(); ctx.stroke();
         } else {
             // Short Hair (Cap)
             ctx.beginPath(); ctx.arc(x, y-5+bob, 24, Math.PI, 0); ctx.fill(); ctx.stroke();
         }
 
-        // --- FACE ---
+        // --- FACE (The "OverSimplified" Dot Eyes) ---
         ctx.fillStyle="black";
         if(emotion === 'ANGRY') {
+            // Angry Eyebrows
             ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(x-8, y-8+bob); ctx.lineTo(x-2, y-4+bob); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(x+8, y-8+bob); ctx.lineTo(x+2, y-4+bob); ctx.stroke();
         }
+        // Dots
         ctx.beginPath(); ctx.arc(x-5, y+bob, 2.5, 0, Math.PI*2); ctx.fill(); 
         ctx.beginPath(); ctx.arc(x+5, y+bob, 2.5, 0, Math.PI*2); ctx.fill();
 
+        // Mustache (Simple Curve)
         if(hasMustache) {
             ctx.lineWidth=2; ctx.strokeStyle="black";
             ctx.beginPath(); ctx.moveTo(x-6, y+8+bob); ctx.quadraticCurveTo(x, y+4+bob, x+6, y+8+bob); ctx.stroke();
@@ -507,6 +501,9 @@ const Game = {
 
     drawPlayer: function(p) {
         const bob = Math.sin(p.frame)*4;
+        // Shadow (Fixed: Locked to X/Y+55)
+        this.ctx.fillStyle="rgba(0,0,0,0.2)"; this.ctx.beginPath(); this.ctx.ellipse(p.x+15, p.y+55, 18, 6, 0, 0, Math.PI*2); this.ctx.fill();
+        
         this.drawAvatar(p.x+15, p.y, "#0984e3", 'MALE', p.frame, true, false, 'HAPPY'); 
 
         if(p.stun>0) { this.ctx.font = "30px Arial"; this.ctx.fillText("💫", p.x, p.y-20); }
@@ -528,7 +525,8 @@ const Game = {
         if(!isGoldman) col = c.gender === 'MALE' ? "#74b9ff" : "#fab1a0";
 
         const emotion = c.state === 'CHAD' ? 'ANGRY' : 'HAPPY';
-        this.drawAvatar(c.x+20, c.y, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'), emotion);
+        // Draw higher (y-10) to fix clipping
+        this.drawAvatar(c.x+20, c.y-10, col, c.gender, this.state.frame, false, (isGoldman && c.gender === 'MALE'), emotion);
 
         if(c.state==='CHAD') {
             ctx.fillStyle="black"; ctx.font="40px Arial"; ctx.fillText(c.cooldown>0?"💤":"🤬", c.x, c.y-50+bob);
