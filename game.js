@@ -34,8 +34,9 @@ const Game = {
         if(titleEl) titleEl.innerText = company;
 
         if(phase === 'MEMORIZE') {
+            // HIDE Start Screen, SHOW Memory Screen
             document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('level-screen').classList.add('hidden'); // Ensure level screen is gone
+            document.getElementById('level-screen').classList.add('hidden');
             document.getElementById('memory-overlay').classList.remove('hidden');
             
             // Map Gen
@@ -64,37 +65,29 @@ const Game = {
                 }
             }
 
-            // Legend
+            // Populate Legend
             const lg = document.getElementById('legend-display');
             if(lg) {
                 lg.innerHTML = '';
-                // Adjust grid for L2
                 lg.style.gridTemplateColumns = this.state.level === 1 ? "1fr 1fr 1fr" : "1fr 1fr 1fr 1fr";
-                
                 this.map.forEach(c => {
                     lg.innerHTML += `<div class="legend-item" style="border-left:10px solid ${c.task.color}">${c.task.name} ${c.task.icon}</div>`;
                 });
             }
 
-            // Skip Button (Safety check)
-            if(!document.getElementById('btn-skip')) {
-                const btn = document.createElement('button');
-                btn.id = 'btn-skip';
-                btn.className = 'btn';
-                btn.innerText = "SKIP TIMER ⏭️";
-                btn.style.marginTop = "20px";
-                btn.onclick = () => Game.skipMemory();
-                document.getElementById('memory-overlay').appendChild(btn);
-            }
-
-            // Timer
+            // Start Timer
             let t = 20;
             const el = document.getElementById('timer-big');
-            if(this.tInt) clearInterval(this.tInt); // Clear existing
+            if(el) el.innerText = t;
+            
+            if(this.tInt) clearInterval(this.tInt);
             this.tInt = setInterval(() => {
                 t--; 
                 if(el) el.innerText = t;
-                if(t<=0) { clearInterval(this.tInt); this.startPhase('PLAYING'); }
+                if(t<=0) { 
+                    clearInterval(this.tInt); 
+                    this.startPhase('PLAYING'); 
+                }
             }, 1000);
             
             this.state.phase = 'MEMORIZE';
@@ -102,6 +95,7 @@ const Game = {
 
         if(phase === 'PLAYING') {
             AUDIO.playBGM();
+            // HIDE Memory, SHOW Game
             document.getElementById('memory-overlay').classList.add('hidden');
             document.getElementById('level-screen').classList.add('hidden');
             
